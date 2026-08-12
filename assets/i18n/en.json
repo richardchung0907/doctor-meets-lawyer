@@ -1,0 +1,96 @@
+{
+  "app_title": "Doctor Meets Lawyer",
+  "welcome_tagline": "Cross-Industry Professional Network",
+  "onboarding": {
+    "select_profession": "Select Your Profession",
+    "already_have_account": "Already have an account? Log in",
+    "professions": {
+      "medical_doctor": "Medical Doctor",
+      "tcm": "TCM Practitioner",
+      "dentist": "Dentist",
+      "veterinarian": "Veterinarian",
+      "lawyer": "Lawyer",
+      "judge": "Judge",
+      "other": "Other"
+    },
+    "short_professions": {
+      "medical_doctor": "Doctor",
+      "tcm": "TCM",
+      "dentist": "Dentist",
+      "veterinarian": "Vet",
+      "lawyer": "Lawyer",
+      "judge": "Judge",
+      "other": "Other"
+    }
+  },
+  "auth": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "username": "Username / Name",
+    "profession": "Profession",
+    "gender": "Gender",
+    "gender_male": "Male",
+    "gender_female": "Female",
+    "gender_other": "Other / Prefer not to say",
+    "age": "Age",
+    "bio": "Short Bio",
+    "no_account": "Don't have an account? Sign up",
+    "have_account": "Already have an account? Log in",
+    "signup_as": "Register as {{profession}}",
+    "login_title": "Welcome Back",
+    "signup_title": "Create Your Account",
+    "submitting": "Processing...",
+    "login_success": "Login successful",
+    "signup_success": "Signup successful! Logged in.",
+    "err_invalid": "Please fill in all required fields",
+    "err_auth_failed": "Authentication failed. Please check your credentials."
+  },
+  "feed": {
+    "title": "Topic Hall",
+    "all_professions": "All Professions",
+    "filter_label": "Filter by Profession:",
+    "clear_filter": "Reset Filter",
+    "publish_button": "Post New Topic",
+    "no_topics": "No topics found. Be the first to start a conversation!",
+    "start_chat": "Start 1-on-1 Chat",
+    "chat_started": "Conversation established. Opening chat room...",
+    "topic_placeholder": "Share your professional case study, insights, or inquiry...",
+    "modal_title": "Post New Topic",
+    "cancel": "Cancel",
+    "submit": "Post",
+    "submitting": "Posting...",
+    "realtime_connected": "Realtime Active",
+    "realtime_connecting": "Reconnecting...",
+    "realtime_offline": "Offline Mode"
+  },
+  "conversations": {
+    "title": "1-on-1 Chats",
+    "no_chats": "No active conversations yet. Click 'Start 1-on-1 Chat' on any topic in the Topic Hall to begin!",
+    "unread_count": "{{count}} unread",
+    "last_updated": "Last updated"
+  },
+  "chat": {
+    "input_placeholder": "Type a message...",
+    "send": "Send",
+    "connecting": "Establishing channel...",
+    "online": "Online",
+    "offline": "Connection lost (reconnecting)",
+    "unread": "Unread",
+    "read": "Read",
+    "load_more": "Load earlier messages"
+  },
+  "profile": {
+    "title": "Profile & Settings",
+    "language_setting": "App Language",
+    "current_language": "Current Language",
+    "logout": "Log Out",
+    "logout_confirm": "Are you sure you want to log out?"
+  },
+  "nav": {
+    "feed": "Topic Hall",
+    "messages": "Chats",
+    "profile": "Profile"
+  }
+}
