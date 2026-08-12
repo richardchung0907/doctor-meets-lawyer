@@ -35,20 +35,15 @@ jobs:
       - name: Run Expo Prebuild (Generate Android Native Project)
         run: npx expo prebuild --platform android
 
-      - name: Pre-package JS Bundle inside Assets
-        run: |
-          mkdir -p android/app/src/main/assets
-          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
-
-      - name: Build Debug APK with Gradle
+      - name: Build Standalone Release APK with Gradle (Auto-packaged Offline Bundle)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
-      - name: Upload APK Artifact
+      - name: Upload Standalone Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
