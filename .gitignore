@@ -7,6 +7,7 @@ supabase keys.txt
 # Local Scripts & Build Automation Tools
 scripts/ci_emulator_runner.py
 scripts/apply_migration.js
+scripts/mount_emulator.py
 
 # Dependencies
 node_modules/
