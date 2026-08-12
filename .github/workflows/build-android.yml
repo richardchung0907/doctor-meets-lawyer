@@ -35,6 +35,11 @@ jobs:
       - name: Run Expo Prebuild (Generate Android Native Project)
         run: npx expo prebuild --platform android
 
+      - name: Pre-package JS Bundle inside Assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+
       - name: Build Debug APK with Gradle
         run: |
           cd android
