@@ -1,0 +1,96 @@
+{
+  "app_title": "醫法會 Doctor Meets Lawyer",
+  "welcome_tagline": "跨界專業 ‧ 深度交流",
+  "onboarding": {
+    "select_profession": "請選擇您的專業身份",
+    "already_have_account": "已有帳號？登入",
+    "professions": {
+      "medical_doctor": "我是西醫",
+      "tcm": "我是中醫",
+      "dentist": "我是牙醫",
+      "veterinarian": "我是獸醫",
+      "lawyer": "我是律師",
+      "judge": "我是法官",
+      "other": "我是其他"
+    },
+    "short_professions": {
+      "medical_doctor": "西醫",
+      "tcm": "中醫",
+      "dentist": "牙醫",
+      "veterinarian": "獸醫",
+      "lawyer": "律師",
+      "judge": "法官",
+      "other": "其他"
+    }
+  },
+  "auth": {
+    "login": "登入",
+    "signup": "註冊帳號",
+    "email": "電郵地址",
+    "password": "密碼",
+    "username": "用戶名稱 / 稱呼",
+    "profession": "專業身份",
+    "gender": "性別",
+    "gender_male": "男",
+    "gender_female": "女",
+    "gender_other": "其他 / 保密",
+    "age": "年齡",
+    "bio": "個人簡介 / 簡介說明",
+    "no_account": "未有帳號？按此註冊",
+    "have_account": "已有帳號？按此登入",
+    "signup_as": "以【{{profession}}】身份註冊",
+    "login_title": "歡迎回來",
+    "signup_title": "創建您的專業帳號",
+    "submitting": "處理中...",
+    "login_success": "登入成功",
+    "signup_success": "註冊成功！已自動登入",
+    "err_invalid": "請填寫所有必填欄位",
+    "err_auth_failed": "認證失敗，請檢查電郵及密碼"
+  },
+  "feed": {
+    "title": "話題大廳",
+    "all_professions": "全部專業",
+    "filter_label": "專業篩選：",
+    "clear_filter": "重置篩選",
+    "publish_button": "發布話題",
+    "no_topics": "暫無相關話題，快來發布第一個討論吧！",
+    "start_chat": "發起 1 對 1 對話",
+    "chat_started": "對話已建立，前往聊天室",
+    "topic_placeholder": "分享您的專業觀點、案例思考或疑問...",
+    "modal_title": "發布新話題",
+    "cancel": "取消",
+    "submit": "發布",
+    "submitting": "發布中...",
+    "realtime_connected": "即時連線中",
+    "realtime_connecting": "重新連線中...",
+    "realtime_offline": "離線模式"
+  },
+  "conversations": {
+    "title": "1對1 私訊對話",
+    "no_chats": "尚無對話紀錄。在話題大廳點擊「發起 1 對 1 對話」開始交流吧！",
+    "unread_count": "{{count}} 條未讀",
+    "last_updated": "最後更新"
+  },
+  "chat": {
+    "input_placeholder": "輸入訊息...",
+    "send": "發送",
+    "connecting": "即時通道建立中...",
+    "online": "線上連線",
+    "offline": "連線中斷（嘗試重連）",
+    "unread": "未讀",
+    "read": "已讀",
+    "load_more": "載入更多訊息"
+  },
+  "profile": {
+    "title": "個人中心",
+    "language_setting": "切換應用程式語言",
+    "current_language": "目前語言",
+    "logout": "登出帳號",
+    "logout_confirm": "確定要登出醫法會嗎？"
+  },
+  "nav": {
+    "feed": "話題大廳",
+    "messages": "私訊",
+    "profile": "個人中心"
+  }
+}

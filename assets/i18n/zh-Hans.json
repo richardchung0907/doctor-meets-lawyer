@@ -1,0 +1,96 @@
+{
+  "app_title": "医法会 Doctor Meets Lawyer",
+  "welcome_tagline": "跨界专业 ‧ 深度交流",
+  "onboarding": {
+    "select_profession": "请选择您的专业身份",
+    "already_have_account": "已有账号？登录",
+    "professions": {
+      "medical_doctor": "我是西医",
+      "tcm": "我是中医",
+      "dentist": "我是牙医",
+      "veterinarian": "我是兽医",
+      "lawyer": "我是律师",
+      "judge": "我是法官",
+      "other": "我是其他"
+    },
+    "short_professions": {
+      "medical_doctor": "西医",
+      "tcm": "中医",
+      "dentist": "牙医",
+      "veterinarian": "兽医",
+      "lawyer": "律师",
+      "judge": "法官",
+      "other": "其他"
+    }
+  },
+  "auth": {
+    "login": "登录",
+    "signup": "注册账号",
+    "email": "邮箱地址",
+    "password": "密码",
+    "username": "用户名 / 称呼",
+    "profession": "专业身份",
+    "gender": "性别",
+    "gender_male": "男",
+    "gender_female": "女",
+    "gender_other": "其他 / 保密",
+    "age": "年龄",
+    "bio": "个人简介 / 简介说明",
+    "no_account": "未有账号？按此注册",
+    "have_account": "已有账号？按此登录",
+    "signup_as": "以【{{profession}}】身份注册",
+    "login_title": "欢迎回来",
+    "signup_title": "创建您的专业账号",
+    "submitting": "处理中...",
+    "login_success": "登录成功",
+    "signup_success": "注册成功！已自动登录",
+    "err_invalid": "请填写所有必填字段",
+    "err_auth_failed": "认证失败，请检查邮箱及密码"
+  },
+  "feed": {
+    "title": "话题大厅",
+    "all_professions": "全部专业",
+    "filter_label": "专业筛选：",
+    "clear_filter": "重置筛选",
+    "publish_button": "发布话题",
+    "no_topics": "暂无相关话题，快来发布第一个讨论吧！",
+    "start_chat": "发起 1 对 1 对话",
+    "chat_started": "对话已建立，前往聊天室",
+    "topic_placeholder": "分享您的专业观点、案例思考或疑问...",
+    "modal_title": "发布新话题",
+    "cancel": "取消",
+    "submit": "发布",
+    "submitting": "发布中...",
+    "realtime_connected": "实时在线中",
+    "realtime_connecting": "重新连接中...",
+    "realtime_offline": "离线模式"
+  },
+  "conversations": {
+    "title": "1对1 私信对话",
+    "no_chats": "尚无对话记录。在话题大厅点击“发起 1 对 1 对话”开始交流吧！",
+    "unread_count": "{{count}} 条未读",
+    "last_updated": "最后更新"
+  },
+  "chat": {
+    "input_placeholder": "输入消息...",
+    "send": "发送",
+    "connecting": "实时通道建立中...",
+    "online": "在线连接",
+    "offline": "连接中断（尝试重连）",
+    "unread": "未读",
+    "read": "已读",
+    "load_more": "加载更多消息"
+  },
+  "profile": {
+    "title": "个人中心",
+    "language_setting": "切换应用程序语言",
+    "current_language": "当前语言",
+    "logout": "退出账号",
+    "logout_confirm": "确定要退出医法会吗？"
+  },
+  "nav": {
+    "feed": "话题大厅",
+    "messages": "私信",
+    "profile": "个人中心"
+  }
+}
