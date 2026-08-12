@@ -1,0 +1,301 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { MessageSquare, User, ChevronRight } from 'lucide-react-native';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { Conversation, Profile, ProfessionKey } from '../types/database';
+import { ProfessionBadge } from '../components/ProfessionBadge';
+
+interface ConversationsScreenProps {
+  onOpenChat: (conversationId: string, recipientName: string) => void;
+}
+
+export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpenChat }) => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const fetchConversations = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+
+      // Query conversations where user is participant1 or participant2
+      const { data, error } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          participant1:participant1_id (id, username, profession, avatar_url),
+          participant2:participant2_id (id, username, profession, avatar_url)
+        `)
+        .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
+        .order('updated_at', { ascending: false });
+
+      if (!error && data) {
+        // Map to include other_participant and fetch last message + unread count
+        const processed: Conversation[] = await Promise.all(
+          data.map(async (conv: any) => {
+            const isP1 = conv.participant1_id === user.id;
+            const otherParticipant: Profile = isP1 ? conv.participant2 : conv.participant1;
+
+            // Fetch last message
+            const { data: lastMsg } = await supabase
+              .from('messages')
+              .select('*')
+              .eq('conversation_id', conv.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            // Fetch unread count
+            const { count: unreadCount } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id)
+              .neq('sender_id', user.id)
+              .eq('is_read', false);
+
+            return {
+              ...conv,
+              other_participant: otherParticipant,
+              last_message: lastMsg || null,
+              unread_count: unreadCount || 0,
+            };
+          })
+        );
+
+        setConversations(processed);
+      }
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+
+    // Subscribe to conversations & messages changes
+    const convChannel = supabase
+      .channel('public:conversations_and_messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        () => fetchConversations()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => fetchConversations()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(convChannel);
+    };
+  }, [user]);
+
+  const formatDate = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.topBar}>
+        <Text style={styles.barTitle}>{t('conversations.title')}</Text>
+      </View>
+
+      {loading && !refreshing ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#0EA5E9" />
+        </View>
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const partner = item.other_participant;
+            const partnerProf = (partner?.profession || 'other') as ProfessionKey;
+            const partnerName = partner?.username || 'Professional User';
+            const unread = item.unread_count || 0;
+
+            return (
+              <TouchableOpacity
+                style={styles.convItem}
+                onPress={() => onOpenChat(item.id, partnerName)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.avatar}>
+                  <User size={20} color="#94A3B8" />
+                </View>
+
+                <View style={styles.convDetails}>
+                  <View style={styles.topRow}>
+                    <Text style={styles.partnerName} numberOfLines={1}>
+                      {partnerName}
+                    </Text>
+                    <Text style={styles.timeText}>
+                      {formatDate(item.last_message?.created_at || item.updated_at)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.profRow}>
+                    <ProfessionBadge profession={partnerProf} size="small" />
+                  </View>
+
+                  <Text style={styles.lastMsgText} numberOfLines={1}>
+                    {item.last_message ? item.last_message.content : 'Started conversation...'}
+                  </Text>
+                </View>
+
+                {unread > 0 ? (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>{unread}</Text>
+                  </View>
+                ) : (
+                  <ChevronRight size={18} color="#475569" />
+                )}
+              </TouchableOpacity>
+            );
+          }}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchConversations();
+              }}
+              tintColor="#0EA5E9"
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MessageSquare size={48} color="#475569" />
+              <Text style={styles.emptyText}>{t('conversations.no_chats')}</Text>
+            </View>
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  topBar: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+  },
+  barTitle: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    padding: 16,
+  },
+  convItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 14,
+    marginBottom: 12,
+    gap: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  convDetails: {
+    flex: 1,
+    gap: 4,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  partnerName: {
+    color: '#F8FAFC',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  timeText: {
+    color: '#64748B',
+    fontSize: 11,
+  },
+  profRow: {
+    marginVertical: 2,
+  },
+  lastMsgText: {
+    color: '#94A3B8',
+    fontSize: 13,
+  },
+  unreadBadge: {
+    backgroundColor: '#0EA5E9',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  unreadText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  emptyText: {
+    color: '#64748B',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+});
