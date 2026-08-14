@@ -30,7 +30,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   onSuccess,
 }) => {
   const { t } = useTranslation();
-  const { signUpWithProfession, signIn, isLoading } = useAuth();
+  const { signUpWithProfession, signIn } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
@@ -43,6 +43,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [age, setAge] = useState('');
   const [bio, setBio] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setErrorMessage(null);
@@ -57,6 +58,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         return;
       }
       const parsedAge = age ? parseInt(age, 10) : undefined;
+      setIsSubmitting(true);
       const { error } = await signUpWithProfession(
         email.trim(),
         password,
@@ -66,6 +68,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         parsedAge,
         bio.trim()
       );
+      setIsSubmitting(false);
 
       if (error) {
         setErrorMessage(error.message || t('auth.err_auth_failed'));
@@ -73,7 +76,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         onSuccess();
       }
     } else {
+      setIsSubmitting(true);
       const { error } = await signIn(email.trim(), password);
+      setIsSubmitting(false);
       if (error) {
         setErrorMessage(error.message || t('auth.err_auth_failed'));
       } else {
@@ -236,10 +241,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           <TouchableOpacity
             style={styles.submitBtn}
             onPress={handleSubmit}
-            disabled={isLoading}
+            disabled={isSubmitting}
             activeOpacity={0.8}
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
