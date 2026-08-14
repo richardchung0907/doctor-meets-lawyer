@@ -93,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     age?: number,
     bio?: string
   ) => {
-    setIsLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -112,12 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Profile trigger runs in Postgres automatically
       await fetchProfile(data.user.id);
     }
-    setIsLoading(false);
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -126,17 +123,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!error && data.user) {
       await fetchProfile(data.user.id);
     }
-    setIsLoading(false);
     return { error };
   };
 
   const signOut = async () => {
-    setIsLoading(true);
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
     setProfile(null);
-    setIsLoading(false);
   };
 
   return (
