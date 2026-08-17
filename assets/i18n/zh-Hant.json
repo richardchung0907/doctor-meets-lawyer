@@ -63,7 +63,9 @@
     "submitting": "發布中...",
     "realtime_connected": "即時連線中",
     "realtime_connecting": "重新連線中...",
-    "realtime_offline": "離線模式"
+    "realtime_offline": "離線模式",
+    "topic_limit_title": "話題數量已達上限",
+    "topic_limit_message": "您在 24 小時內最多可有 3 個話題顯示在話題大廳，超過 24 小時的話題會自動過期。"
   },
   "conversations": {
     "title": "1對1 私訊對話",

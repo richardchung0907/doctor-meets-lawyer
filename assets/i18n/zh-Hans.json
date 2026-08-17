@@ -63,7 +63,9 @@
     "submitting": "发布中...",
     "realtime_connected": "实时在线中",
     "realtime_connecting": "重新连接中...",
-    "realtime_offline": "离线模式"
+    "realtime_offline": "离线模式",
+    "topic_limit_title": "话题数量已达上限",
+    "topic_limit_message": "您在 24 小时内最多可有 3 个话题显示在话题大厅，超过 24 小时的话题会自动过期。"
   },
   "conversations": {
     "title": "1对1 私信对话",
