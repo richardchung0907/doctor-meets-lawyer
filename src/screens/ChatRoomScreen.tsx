@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
+import { theme } from '../theme';
 
 interface ChatRoomScreenProps {
   conversationId: string;
@@ -155,7 +156,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
       {/* Header Bar */}
       <View style={styles.headerBar}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <ArrowLeft size={22} color="#F8FAFC" />
+          <ArrowLeft size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
@@ -174,7 +175,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
       >
         {loading ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#0EA5E9" />
+            <ActivityIndicator size="large" color={theme.colors.primary} />
           </View>
         ) : (
           <FlatList
@@ -208,9 +209,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
                       </Text>
                       {isMine && (
                         item.is_read ? (
-                          <CheckCheck size={14} color="#38BDF8" />
+                          <CheckCheck size={14} color={theme.colors.primaryLight} />
                         ) : (
-                          <Check size={14} color="#94A3B8" />
+                          <Check size={14} color={theme.colors.textFaint} />
                         )
                       )}
                     </View>
@@ -227,7 +228,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
           <TextInput
             style={styles.textInput}
             placeholder={t('chat.input_placeholder')}
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.colors.textFaint}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -240,9 +241,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
             activeOpacity={0.8}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={theme.colors.white} />
             ) : (
-              <Send size={18} color="#FFFFFF" />
+              <Send size={18} color={theme.colors.white} />
             )}
           </TouchableOpacity>
         </View>
@@ -254,7 +255,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   headerBar: {
     flexDirection: 'row',
@@ -263,23 +264,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   backBtn: {
     padding: 6,
     borderRadius: 12,
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
   },
   headerInfo: {
     alignItems: 'center',
   },
   recipientName: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
   },
   onlineBadge: {
-    color: '#10B981',
+    color: theme.colors.success,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -310,13 +311,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   myBubble: {
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     borderBottomRightRadius: 4,
   },
   theirBubble: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -324,10 +325,10 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   myText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
   },
   theirText: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
   },
   bubbleFooter: {
     flexDirection: 'row',
@@ -342,25 +343,25 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.75)',
   },
   theirTime: {
-    color: '#64748B',
+    color: theme.colors.textFaint,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#334155',
+    borderTopColor: theme.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 10,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#F8FAFC',
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     maxHeight: 100,
@@ -370,11 +371,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: '#334155',
+    backgroundColor: theme.colors.borderStrong,
   },
 });

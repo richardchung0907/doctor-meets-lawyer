@@ -20,6 +20,7 @@ import { TopicCard } from '../components/TopicCard';
 import { ProfessionMultiFilter } from '../components/ProfessionMultiFilter';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { LanguageSelector } from '../components/LanguageSelector';
+import { theme } from '../theme';
 
 interface FeedScreenProps {
   onOpenChat: (conversationId: string, recipientName: string) => void;
@@ -211,7 +212,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
       {/* Topics Feed List */}
       {loading && !refreshing ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#0EA5E9" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -232,12 +233,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
                 setRefreshing(true);
                 fetchTopics();
               }}
-              tintColor="#0EA5E9"
+              tintColor={theme.colors.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <MessageSquarePlus size={48} color="#475569" />
+              <MessageSquarePlus size={48} color={theme.colors.textFaint} />
               <Text style={styles.emptyText}>{t('feed.no_topics')}</Text>
             </View>
           }
@@ -250,7 +251,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
         onPress={() => setIsModalOpen(true)}
         activeOpacity={0.85}
       >
-        <Plus size={24} color="#FFFFFF" />
+        <Plus size={24} color={theme.colors.white} />
         <Text style={styles.fabText}>{t('feed.publish_button')}</Text>
       </TouchableOpacity>
 
@@ -261,14 +262,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('feed.modal_title')}</Text>
               <TouchableOpacity onPress={() => setIsModalOpen(false)}>
-                <X size={22} color="#94A3B8" />
+                <X size={22} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <TextInput
               style={styles.modalInput}
               placeholder={t('feed.topic_placeholder')}
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.colors.textFaint}
               multiline
               value={newTopicContent}
               onChangeText={setNewTopicContent}
@@ -288,10 +289,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
                 disabled={isPosting || !newTopicContent.trim()}
               >
                 {isPosting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={theme.colors.white} />
                 ) : (
                   <>
-                    <Send size={16} color="#FFFFFF" />
+                    <Send size={16} color={theme.colors.white} />
                     <Text style={styles.submitBtnText}>{t('feed.submit')}</Text>
                   </>
                 )}
@@ -307,7 +308,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -316,10 +317,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   barTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -332,12 +333,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInitial: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontWeight: '800',
     fontSize: 16,
   },
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontSize: 15,
     textAlign: 'center',
   },
@@ -367,19 +368,19 @@ const styles = StyleSheet.create({
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     borderRadius: 28,
     paddingHorizontal: 20,
     paddingVertical: 14,
     gap: 8,
-    shadowColor: '#0EA5E9',
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 8,
   },
   fabText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -401,16 +402,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
   },
   modalInput: {
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
-    color: '#F8FAFC',
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
     padding: 14,
     height: 120,
     textAlignVertical: 'top',
@@ -427,21 +428,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   cancelBtnText: {
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
     gap: 8,
   },
   submitBtnText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontSize: 14,
     fontWeight: '700',
   },

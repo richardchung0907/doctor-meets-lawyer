@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react-native';
+import { theme } from '../theme';
 
 export type RealtimeStatus = 'connected' | 'connecting' | 'offline';
 
@@ -21,9 +22,9 @@ export const ConnectionStatusBanner: React.FC<ConnectionStatusBannerProps> = ({ 
   return (
     <View style={[styles.banner, isConnecting ? styles.connectingBanner : styles.offlineBanner]}>
       {isConnecting ? (
-        <RefreshCw size={14} color="#F59E0B" />
+        <RefreshCw size={14} color={theme.colors.warning} />
       ) : (
-        <WifiOff size={14} color="#EF4444" />
+        <WifiOff size={14} color={theme.colors.danger} />
       )}
       <Text style={[styles.text, isConnecting ? styles.connectingText : styles.offlineText]}>
         {isConnecting ? t('feed.realtime_connecting') : t('feed.realtime_offline')}
@@ -56,9 +57,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   connectingText: {
-    color: '#F59E0B',
+    color: theme.colors.warning,
   },
   offlineText: {
-    color: '#EF4444',
+    color: theme.colors.danger,
   },
 });

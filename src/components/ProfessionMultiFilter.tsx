@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useTranslation } from 'react-i18next';
 import { Filter, X } from 'lucide-react-native';
 import { ProfessionKey, PROFESSION_KEYS, PROFESSION_COLORS } from '../types/database';
+import { theme } from '../theme';
 
 interface ProfessionMultiFilterProps {
   selectedProfessions: ProfessionKey[];
@@ -23,14 +24,14 @@ export const ProfessionMultiFilter: React.FC<ProfessionMultiFilterProps> = ({
     <View style={styles.wrapper}>
       <View style={styles.headerRow}>
         <View style={styles.titleRow}>
-          <Filter size={16} color="#38BDF8" />
+          <Filter size={16} color={theme.colors.primary} />
           <Text style={styles.filterTitle}>{t('feed.filter_label')}</Text>
         </View>
 
         {!isAllSelected && (
           <TouchableOpacity style={styles.clearBtn} onPress={onClearAll} activeOpacity={0.7}>
             <Text style={styles.clearText}>{t('feed.clear_filter')}</Text>
-            <X size={14} color="#EF4444" />
+            <X size={14} color={theme.colors.danger} />
           </TouchableOpacity>
         )}
       </View>
@@ -63,8 +64,8 @@ export const ProfessionMultiFilter: React.FC<ProfessionMultiFilterProps> = ({
               style={[
                 styles.pill,
                 {
-                  backgroundColor: isSelected ? colors.bg : '#1E293B',
-                  borderColor: isSelected ? colors.border : '#334155',
+                  backgroundColor: isSelected ? colors.bg : theme.colors.surface,
+                  borderColor: isSelected ? colors.border : theme.colors.border,
                 },
               ]}
               onPress={() => onToggleProfession(key)}
@@ -73,13 +74,13 @@ export const ProfessionMultiFilter: React.FC<ProfessionMultiFilterProps> = ({
               <View
                 style={[
                   styles.dot,
-                  { backgroundColor: isSelected ? colors.primary : '#64748B' },
+                  { backgroundColor: isSelected ? colors.primary : theme.colors.textMuted },
                 ]}
               />
               <Text
                 style={[
                   styles.pillText,
-                  { color: isSelected ? colors.primary : '#94A3B8' },
+                  { color: isSelected ? colors.primary : theme.colors.textMuted },
                   isSelected && styles.pillTextBold,
                 ]}
               >
@@ -95,10 +96,10 @@ export const ProfessionMultiFilter: React.FC<ProfessionMultiFilterProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   filterTitle: {
-    color: '#CBD5E1',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   clearText: {
-    color: '#EF4444',
+    color: theme.colors.danger,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -139,20 +140,20 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 6,
   },
   allPillActive: {
-    backgroundColor: '#38BDF8',
-    borderColor: '#38BDF8',
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   allPillTextActive: {
-    color: '#0F172A',
+    color: theme.colors.white,
     fontWeight: '800',
   },
   dot: {
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontWeight: '500',
   },
   pillTextBold: {

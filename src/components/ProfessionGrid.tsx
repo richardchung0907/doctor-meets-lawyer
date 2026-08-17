@@ -11,6 +11,7 @@ import {
   UserCheck 
 } from 'lucide-react-native';
 import { ProfessionKey, PROFESSION_KEYS, PROFESSION_COLORS } from '../types/database';
+import { theme } from '../theme';
 
 interface ProfessionGridProps {
   onSelectProfession: (profession: ProfessionKey) => void;
@@ -61,8 +62,8 @@ export const ProfessionGrid: React.FC<ProfessionGridProps> = ({
               style={[
                 styles.squareCard,
                 {
-                  backgroundColor: isSelected ? colors.bg : 'rgba(30, 41, 59, 0.7)',
-                  borderColor: isSelected ? colors.primary : 'rgba(51, 65, 85, 0.6)',
+                  backgroundColor: isSelected ? colors.bg : theme.colors.surface,
+                  borderColor: isSelected ? colors.primary : theme.colors.border,
                 },
               ]}
               activeOpacity={0.8}
@@ -71,7 +72,7 @@ export const ProfessionGrid: React.FC<ProfessionGridProps> = ({
               <View style={[styles.iconContainer, { backgroundColor: colors.bg }]}>
                 {renderIcon(key)}
               </View>
-              <Text style={[styles.cardText, { color: isSelected ? colors.primary : '#F1F5F9' }]}>
+              <Text style={[styles.cardText, { color: isSelected ? colors.primary : theme.colors.textContent }]}>
                 {label}
               </Text>
             </TouchableOpacity>
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: theme.colors.textSecondary,
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     padding: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Conversation, Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { theme } from '../theme';
 
 interface ConversationsScreenProps {
   onOpenChat: (conversationId: string, recipientName: string) => void;
@@ -128,7 +129,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
 
       {loading && !refreshing ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#0EA5E9" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -147,7 +148,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
                 activeOpacity={0.7}
               >
                 <View style={styles.avatar}>
-                  <User size={20} color="#94A3B8" />
+                  <User size={20} color={theme.colors.textMuted} />
                 </View>
 
                 <View style={styles.convDetails}>
@@ -174,7 +175,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
                     <Text style={styles.unreadText}>{unread}</Text>
                   </View>
                 ) : (
-                  <ChevronRight size={18} color="#475569" />
+                  <ChevronRight size={18} color={theme.colors.textFaint} />
                 )}
               </TouchableOpacity>
             );
@@ -187,12 +188,12 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
                 setRefreshing(true);
                 fetchConversations();
               }}
-              tintColor="#0EA5E9"
+              tintColor={theme.colors.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <MessageSquare size={48} color="#475569" />
+              <MessageSquare size={48} color={theme.colors.textFaint} />
               <Text style={styles.emptyText}>{t('conversations.no_chats')}</Text>
             </View>
           }
@@ -205,16 +206,16 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   topBar: {
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   barTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -229,10 +230,10 @@ const styles = StyleSheet.create({
   convItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     padding: 14,
     marginBottom: 12,
     gap: 12,
@@ -241,11 +242,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
   },
   convDetails: {
     flex: 1,
@@ -257,23 +258,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   partnerName: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
   timeText: {
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontSize: 11,
   },
   profRow: {
     marginVertical: 2,
   },
   lastMsgText: {
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontSize: 13,
   },
   unreadBadge: {
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   unreadText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,

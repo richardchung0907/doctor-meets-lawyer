@@ -6,6 +6,7 @@ import { LanguageSelector } from '../components/LanguageSelector';
 import { useAuth } from '../context/AuthContext';
 import { ProfessionKey } from '../types/database';
 import { Scale, HeartPulse } from 'lucide-react-native';
+import { theme } from '../theme';
 
 interface LandingScreenProps {
   onSelectProfessionToSignup: (prof: ProfessionKey) => void;
@@ -31,8 +32,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         <View style={styles.topHeader}>
           <View style={styles.logoRow}>
             <View style={styles.logoIconBg}>
-              <HeartPulse size={22} color="#0EA5E9" />
-              <Scale size={22} color="#8B5CF6" />
+              <HeartPulse size={22} color={theme.colors.primary} />
+              <Scale size={22} color={theme.colors.violet} />
             </View>
             <View>
               <Text style={styles.appTitle}>{t('app_title')}</Text>
@@ -69,7 +70,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -91,33 +92,33 @@ const styles = StyleSheet.create({
   },
   logoIconBg: {
     flexDirection: 'row',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     padding: 8,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     gap: 2,
   },
   appTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     letterSpacing: 0.5,
   },
   tagline: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontWeight: '500',
   },
   heroCard: {
     width: '100%',
-    backgroundColor: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+    backgroundColor: 'linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%)',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
+    borderColor: 'rgba(14, 165, 233, 0.3)',
     padding: 20,
     marginBottom: 10,
-    shadowColor: '#0EA5E9',
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -125,12 +126,12 @@ const styles = StyleSheet.create({
   heroHeader: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#38BDF8',
+    color: theme.colors.primaryDark,
     marginBottom: 8,
   },
   heroSub: {
     fontSize: 14,
-    color: '#CBD5E1',
+    color: theme.colors.textSecondary,
     lineHeight: 20,
   },
   loginLinkButton: {
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loginLinkText: {
-    color: '#38BDF8',
+    color: theme.colors.primaryDark,
     fontSize: 15,
     fontWeight: '600',
     textDecorationLine: 'underline',

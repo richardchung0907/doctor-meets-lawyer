@@ -11,6 +11,7 @@ import { ChatRoomScreen } from './src/screens/ChatRoomScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ProfessionKey } from './src/types/database';
 import { loadPersistedLanguage } from './src/i18n';
+import { theme } from './src/theme';
 
 type MainTab = 'feed' | 'conversations' | 'profile';
 
@@ -45,7 +46,7 @@ const AppNavigator: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0EA5E9" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>{t('app_title')}</Text>
       </View>
     );
@@ -98,7 +99,7 @@ const AppNavigator: React.FC = () => {
   // 4. Main Tab Navigation
   return (
     <SafeAreaView style={styles.mainContainer}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
       
       <View style={{ flex: 1 }}>
         {currentTab === 'feed' && (
@@ -135,7 +136,7 @@ const AppNavigator: React.FC = () => {
           onPress={() => setCurrentTab('feed')}
           activeOpacity={0.7}
         >
-          <Home size={22} color={currentTab === 'feed' ? '#0EA5E9' : '#64748B'} />
+          <Home size={22} color={currentTab === 'feed' ? theme.colors.primary : theme.colors.textMuted} />
           <Text style={[styles.tabLabel, currentTab === 'feed' && styles.activeTabLabel]}>
             {t('nav.feed')}
           </Text>
@@ -146,7 +147,7 @@ const AppNavigator: React.FC = () => {
           onPress={() => setCurrentTab('conversations')}
           activeOpacity={0.7}
         >
-          <MessageSquare size={22} color={currentTab === 'conversations' ? '#0EA5E9' : '#64748B'} />
+          <MessageSquare size={22} color={currentTab === 'conversations' ? theme.colors.primary : theme.colors.textMuted} />
           <Text style={[styles.tabLabel, currentTab === 'conversations' && styles.activeTabLabel]}>
             {t('nav.messages')}
           </Text>
@@ -157,7 +158,7 @@ const AppNavigator: React.FC = () => {
           onPress={() => setCurrentTab('profile')}
           activeOpacity={0.7}
         >
-          <UserIcon size={22} color={currentTab === 'profile' ? '#0EA5E9' : '#64748B'} />
+          <UserIcon size={22} color={currentTab === 'profile' ? theme.colors.primary : theme.colors.textMuted} />
           <Text style={[styles.tabLabel, currentTab === 'profile' && styles.activeTabLabel]}>
             {t('nav.profile')}
           </Text>
@@ -178,25 +179,25 @@ export default function App() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
   },
   loadingText: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   bottomTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#334155',
+    borderTopColor: theme.colors.border,
     paddingVertical: 8,
   },
   tabItem: {
@@ -208,11 +209,11 @@ const styles = StyleSheet.create({
   activeTabItem: {},
   tabLabel: {
     fontSize: 11,
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontWeight: '600',
   },
   activeTabLabel: {
-    color: '#0EA5E9',
+    color: theme.colors.primary,
     fontWeight: '800',
   },
 });
