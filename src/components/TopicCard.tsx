@@ -10,12 +10,14 @@ interface TopicCardProps {
   topic: Topic;
   currentUserId?: string;
   onStartChat: (topic: Topic) => void;
+  onPressAuthor: (userId: string) => void;
 }
 
 export const TopicCard: React.FC<TopicCardProps> = ({
   topic,
   currentUserId,
   onStartChat,
+  onPressAuthor,
 }) => {
   const { t } = useTranslation();
 
@@ -49,7 +51,9 @@ export const TopicCard: React.FC<TopicCardProps> = ({
             <User size={18} color={theme.colors.textMuted} />
           </View>
           <View style={styles.nameBlock}>
-            <Text style={styles.username}>{authorName}</Text>
+            <TouchableOpacity onPress={() => onPressAuthor(topic.user_id)} activeOpacity={0.7}>
+              <Text style={styles.username}>{authorName}</Text>
+            </TouchableOpacity>
             <View style={styles.timeRow}>
               <Clock size={12} color={theme.colors.textFaint} />
               <Text style={styles.timeText}>{formatDate(topic.created_at)}</Text>
@@ -123,9 +127,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   username: {
-    color: theme.colors.textPrimary,
+    color: theme.colors.primaryDark,
     fontSize: 15,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   timeRow: {
     flexDirection: 'row',

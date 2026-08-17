@@ -9,6 +9,7 @@ import { FeedScreen } from './src/screens/FeedScreen';
 import { ConversationsScreen } from './src/screens/ConversationsScreen';
 import { ChatRoomScreen } from './src/screens/ChatRoomScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { OtherUserProfileScreen } from './src/screens/OtherUserProfileScreen';
 import { ProfessionKey } from './src/types/database';
 import { loadPersistedLanguage } from './src/i18n';
 import { theme } from './src/theme';
@@ -24,7 +25,8 @@ const AppNavigator: React.FC = () => {
   const [selectedProfession, setSelectedProfession] = useState<ProfessionKey | null>(null);
 
   const [currentTab, setCurrentTab] = useState<MainTab>('feed');
-  const [activeChat, setActiveChat] = useState<{ id: string; recipientName: string } | null>(null);
+  const [activeChat, setActiveChat] = useState<{ id: string; recipientName: string; recipientId: string } | null>(null);
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     // Load persisted i18n language on mount
@@ -82,12 +84,23 @@ const AppNavigator: React.FC = () => {
     );
   }
 
-  // 3. Chat Room Screen
+  // 3. Other user's public profile (full-screen, with back)
+  if (viewingProfileId) {
+    return (
+      <OtherUserProfileScreen
+        userId={viewingProfileId}
+        onBack={() => setViewingProfileId(null)}
+      />
+    );
+  }
+
+  // 4. Chat Room Screen
   if (activeScreen === 'chat' && activeChat) {
     return (
       <ChatRoomScreen
         conversationId={activeChat.id}
         recipientName={activeChat.recipientName}
+        onPressRecipient={() => setViewingProfileId(activeChat.recipientId)}
         onBack={() => {
           setActiveChat(null);
           setActiveScreen('main');
@@ -96,7 +109,7 @@ const AppNavigator: React.FC = () => {
     );
   }
 
-  // 4. Main Tab Navigation
+  // 5. Main Tab Navigation
   return (
     <SafeAreaView style={styles.mainContainer}>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
@@ -104,20 +117,22 @@ const AppNavigator: React.FC = () => {
       <View style={{ flex: 1 }}>
         {currentTab === 'feed' && (
           <FeedScreen
-            onOpenChat={(convId, name) => {
-              setActiveChat({ id: convId, recipientName: name });
+            onOpenChat={(convId, name, partnerId) => {
+              setActiveChat({ id: convId, recipientName: name, recipientId: partnerId });
               setActiveScreen('chat');
             }}
             onOpenProfile={() => setCurrentTab('profile')}
+            onViewUserProfile={(userId) => setViewingProfileId(userId)}
           />
         )}
 
         {currentTab === 'conversations' && (
           <ConversationsScreen
-            onOpenChat={(convId, name) => {
-              setActiveChat({ id: convId, recipientName: name });
+            onOpenChat={(convId, name, partnerId) => {
+              setActiveChat({ id: convId, recipientName: name, recipientId: partnerId });
               setActiveScreen('chat');
             }}
+            onViewUserProfile={(userId) => setViewingProfileId(userId)}
           />
         )}
 

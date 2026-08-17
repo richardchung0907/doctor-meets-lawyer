@@ -24,8 +24,9 @@ import { LanguageSelector } from '../components/LanguageSelector';
 import { theme } from '../theme';
 
 interface FeedScreenProps {
-  onOpenChat: (conversationId: string, recipientName: string) => void;
+  onOpenChat: (conversationId: string, recipientName: string, recipientId: string) => void;
   onOpenProfile: () => void;
+  onViewUserProfile: (userId: string) => void;
 }
 
 /** Topic Hall 展示窗口：仅抓取并显示最近 24 小时内的话题 */
@@ -33,7 +34,7 @@ const TOPIC_HALL_WINDOW_MS = 24 * 60 * 60 * 1000;
 /** 每个用户在展示窗口内最多可出现在 Topic Hall 的话题数 */
 const MAX_ACTIVE_TOPICS_PER_USER = 3;
 
-export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfile }) => {
+export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfile, onViewUserProfile }) => {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
 
@@ -206,7 +207,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
       }
 
       const recipientName = topic.profiles?.username || 'Professional';
-      onOpenChat(conversationId, recipientName);
+      onOpenChat(conversationId, recipientName, topic.user_id);
     } catch (err) {
       console.error('Failed to start chat:', err);
     }
@@ -250,6 +251,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
               topic={item}
               currentUserId={user?.id}
               onStartChat={handleStartChatFromTopic}
+              onPressAuthor={onViewUserProfile}
             />
           )}
           contentContainerStyle={styles.listContent}
