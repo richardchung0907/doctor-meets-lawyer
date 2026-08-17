@@ -16,12 +16,24 @@ async function runMigration() {
   await client.connect();
   console.log('Connected!');
 
-  const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '20260812000000_init_schema.sql');
-  const sql = fs.readFileSync(migrationPath, 'utf8');
+  const migrationsDir = path.join(__dirname, '..', 'supabase', 'migrations');
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
 
-  console.log('Applying migration 20260812000000_init_schema.sql...');
-  await client.query(sql);
-  console.log('Migration successfully applied!');
+  if (files.length === 0) {
+    console.log('No migration files found.');
+    await client.end();
+    return;
+  }
+
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    console.log(`Applying ${file}...`);
+    await client.query(sql);
+    console.log(`Applied ${file}`);
+  }
 
   // Verify created tables
   const res = await client.query(`
@@ -31,7 +43,7 @@ async function runMigration() {
     ORDER BY table_name;
   `);
 
-  console.log('Public tables in DB:', res.rows.map(r => r.table_name));
+  console.log('Public tables in DB:', res.rows.map((r) => r.table_name).join(', '));
 
   await client.end();
 }
