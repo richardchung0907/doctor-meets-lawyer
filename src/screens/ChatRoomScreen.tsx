@@ -22,12 +22,14 @@ import { theme } from '../theme';
 interface ChatRoomScreenProps {
   conversationId: string;
   recipientName: string;
+  onPressRecipient: () => void;
   onBack: () => void;
 }
 
 export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   conversationId,
   recipientName,
+  onPressRecipient,
   onBack,
 }) => {
   const { t } = useTranslation();
@@ -160,7 +162,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
-          <Text style={styles.recipientName}>{recipientName}</Text>
+          <TouchableOpacity onPress={onPressRecipient} activeOpacity={0.7}>
+            <Text style={styles.recipientName}>{recipientName}</Text>
+          </TouchableOpacity>
           <Text style={styles.onlineBadge}>● {t('chat.online')}</Text>
         </View>
 
@@ -275,9 +279,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   recipientName: {
-    color: theme.colors.textPrimary,
+    color: theme.colors.primaryDark,
     fontSize: 16,
     fontWeight: '800',
+    textDecorationLine: 'underline',
   },
   onlineBadge: {
     color: theme.colors.success,

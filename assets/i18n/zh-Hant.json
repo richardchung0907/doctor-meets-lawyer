@@ -88,7 +88,10 @@
     "language_setting": "切換應用程式語言",
     "current_language": "目前語言",
     "logout": "登出帳號",
-    "logout_confirm": "確定要登出嗎？"
+    "logout_confirm": "確定要登出嗎？",
+    "other_title": "個人資料",
+    "not_found": "未找到該用戶",
+    "member_since": "加入於 {{date}}"
   },
   "nav": {
     "feed": "話題大廳",

@@ -88,7 +88,10 @@
     "language_setting": "App Language",
     "current_language": "Current Language",
     "logout": "Log Out",
-    "logout_confirm": "Are you sure you want to log out?"
+    "logout_confirm": "Are you sure you want to log out?",
+    "other_title": "Profile",
+    "not_found": "User not found",
+    "member_since": "Member since {{date}}"
   },
   "nav": {
     "feed": "Topic Hall",

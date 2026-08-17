@@ -18,10 +18,11 @@ import { ProfessionBadge } from '../components/ProfessionBadge';
 import { theme } from '../theme';
 
 interface ConversationsScreenProps {
-  onOpenChat: (conversationId: string, recipientName: string) => void;
+  onOpenChat: (conversationId: string, recipientName: string, recipientId: string) => void;
+  onViewUserProfile: (userId: string) => void;
 }
 
-export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpenChat }) => {
+export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpenChat, onViewUserProfile }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
@@ -144,7 +145,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
             return (
               <TouchableOpacity
                 style={styles.convItem}
-                onPress={() => onOpenChat(item.id, partnerName)}
+                onPress={() => onOpenChat(item.id, partnerName, partner?.id || '')}
                 activeOpacity={0.7}
               >
                 <View style={styles.avatar}>
@@ -153,9 +154,15 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
 
                 <View style={styles.convDetails}>
                   <View style={styles.topRow}>
-                    <Text style={styles.partnerName} numberOfLines={1}>
-                      {partnerName}
-                    </Text>
+                    <TouchableOpacity
+                      onPress={() => partner?.id && onViewUserProfile(partner.id)}
+                      activeOpacity={0.7}
+                      style={{ flexShrink: 1 }}
+                    >
+                      <Text style={styles.partnerName} numberOfLines={1}>
+                        {partnerName}
+                      </Text>
+                    </TouchableOpacity>
                     <Text style={styles.timeText}>
                       {formatDate(item.last_message?.created_at || item.updated_at)}
                     </Text>
@@ -258,9 +265,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   partnerName: {
-    color: theme.colors.textPrimary,
+    color: theme.colors.primaryDark,
     fontSize: 16,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   timeText: {
     color: theme.colors.textMuted,

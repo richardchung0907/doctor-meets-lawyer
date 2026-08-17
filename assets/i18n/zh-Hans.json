@@ -88,7 +88,10 @@
     "language_setting": "切换应用程序语言",
     "current_language": "当前语言",
     "logout": "退出账号",
-    "logout_confirm": "确定要退出吗？"
+    "logout_confirm": "确定要退出吗？",
+    "other_title": "个人资料",
+    "not_found": "未找到该用户",
+    "member_since": "加入于 {{date}}"
   },
   "nav": {
     "feed": "话题大厅",
