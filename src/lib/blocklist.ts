@@ -83,16 +83,29 @@ export async function fetchMyBlocklist(): Promise<BlockedEntry[]> {
   if (!uid) return [];
   const { data, error } = await supabase
     .from('blocked_users')
-    .select(
-      `blocked_id,
-       created_at,
-       blocked_user:blocked_id (id, username, profession)`
-    )
+    .select('blocked_id, created_at')
     .eq('blocker_id', uid)
     .order('created_at', { ascending: false });
-  if (error) {
-    console.error('Failed to fetch blocklist:', error);
+  if (error || !data || data.length === 0) {
     return [];
   }
-  return (data ?? []) as BlockedEntry[];
+
+  // blocked_users 对 profiles 有两个外键（blocker_id/blocked_id），
+  // postgrest 的嵌套 join 别名不可靠，改为两段查询后客户端合并。
+  const ids = data.map((r) => r.blocked_id);
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, username, profession')
+    .in('id', ids);
+  if (profilesError) {
+    console.error('Failed to fetch blocked user profiles:', profilesError);
+    return [];
+  }
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  return data.map((row) => ({
+    blocked_id: row.blocked_id,
+    created_at: row.created_at,
+    blocked_user: byId.get(row.blocked_id) ? [byId.get(row.blocked_id)!] : [],
+  }));
 }
