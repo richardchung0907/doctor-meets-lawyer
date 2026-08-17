@@ -63,7 +63,9 @@
     "submitting": "Posting...",
     "realtime_connected": "Realtime Active",
     "realtime_connecting": "Reconnecting...",
-    "realtime_offline": "Offline Mode"
+    "realtime_offline": "Offline Mode",
+    "topic_limit_title": "Topic Limit Reached",
+    "topic_limit_message": "You can have up to 3 topics visible in the Topic Hall within 24 hours. Older topics expire automatically."
   },
   "conversations": {
     "title": "1-on-1 Chats",

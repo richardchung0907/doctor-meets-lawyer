@@ -10,6 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Plus, MessageSquarePlus, RefreshCw, X, Send } from 'lucide-react-native';
@@ -26,6 +27,11 @@ interface FeedScreenProps {
   onOpenChat: (conversationId: string, recipientName: string) => void;
   onOpenProfile: () => void;
 }
+
+/** Topic Hall 展示窗口：仅抓取并显示最近 24 小时内的话题 */
+const TOPIC_HALL_WINDOW_MS = 24 * 60 * 60 * 1000;
+/** 每个用户在展示窗口内最多可出现在 Topic Hall 的话题数 */
+const MAX_ACTIVE_TOPICS_PER_USER = 3;
 
 export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfile }) => {
   const { t } = useTranslation();
@@ -45,6 +51,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
   const fetchTopics = async () => {
     try {
       setLoading(true);
+      // 仅抓取 24 小时内的有效话题，超过窗口的话题不再出现在 Topic Hall
+      const cutoff = new Date(Date.now() - TOPIC_HALL_WINDOW_MS).toISOString();
       const { data, error } = await supabase
         .from('topics')
         .select(`
@@ -57,6 +65,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
           )
         `)
         .eq('is_active', true)
+        .gte('created_at', cutoff)
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -124,6 +133,24 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
     if (!newTopicContent.trim() || !user) return;
 
     try {
+      // 发布前校验：每名用户在 24 小时窗口内最多 3 个话题可出现在 Topic Hall。
+      // 超过窗口的话题不显示、也不计入名额。
+      const cutoff = new Date(Date.now() - TOPIC_HALL_WINDOW_MS).toISOString();
+      const { count, error: countError } = await supabase
+        .from('topics')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .gte('created_at', cutoff);
+
+      if (!countError && (count ?? 0) >= MAX_ACTIVE_TOPICS_PER_USER) {
+        Alert.alert(
+          t('feed.topic_limit_title'),
+          t('feed.topic_limit_message')
+        );
+        return;
+      }
+
       setIsPosting(true);
       const { error } = await supabase.from('topics').insert({
         user_id: user.id,
