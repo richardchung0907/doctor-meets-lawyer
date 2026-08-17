@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Home, User as UserIcon } from 'lucide-react-native';
@@ -11,8 +11,11 @@ import { ChatRoomScreen } from './src/screens/ChatRoomScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { OtherUserProfileScreen } from './src/screens/OtherUserProfileScreen';
 import { ProfessionKey } from './src/types/database';
+import { Message } from './src/types/database';
 import { loadPersistedLanguage } from './src/i18n';
 import { theme } from './src/theme';
+import { supabase } from './src/lib/supabase';
+import { syncPushToken, showLocalNotification } from './src/lib/notifications';
 
 type MainTab = 'feed' | 'conversations' | 'profile';
 
@@ -27,6 +30,96 @@ const AppNavigator: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<MainTab>('feed');
   const [activeChat, setActiveChat] = useState<{ id: string; recipientName: string; recipientId: string } | null>(null);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  // refs to avoid re-subscribing the realtime channel on every screen change
+  const activeChatRef = useRef(activeChat);
+  const activeScreenRef = useRef(activeScreen);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+  useEffect(() => {
+    activeScreenRef.current = activeScreen;
+  }, [activeScreen]);
+
+  const fetchUnreadTotal = useCallback(async () => {
+    if (!user) {
+      setTotalUnread(0);
+      return;
+    }
+    try {
+      const { data: convs, error } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`);
+      if (error || !convs || convs.length === 0) {
+        setTotalUnread(0);
+        return;
+      }
+      const ids = convs.map((c) => c.id);
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .in('conversation_id', ids)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+      setTotalUnread(count ?? 0);
+    } catch (err) {
+      console.error('Error fetching unread total:', err);
+    }
+  }, [user]);
+
+  // Global unread badge + new-message notifications
+  useEffect(() => {
+    if (!user) return;
+
+    fetchUnreadTotal();
+    syncPushToken(); // 登录后同步远程推送 token
+
+    const channel = supabase
+      .channel('app-global-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        async (payload) => {
+          const msg = payload.new as Message;
+          if (!msg || msg.sender_id === user.id) return;
+
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('participant1_id, participant2_id')
+            .eq('id', msg.conversation_id)
+            .maybeSingle();
+          if (!conv) return;
+          const isMine = conv.participant1_id === user.id || conv.participant2_id === user.id;
+          if (!isMine) return;
+
+          fetchUnreadTotal();
+
+          // 若当前正停留在该会话聊天室，消息已实时展示，不再弹通知
+          const inActiveChat =
+            activeScreenRef.current === 'chat' && activeChatRef.current?.id === msg.conversation_id;
+          if (inActiveChat) return;
+
+          const { data: sender } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', msg.sender_id)
+            .maybeSingle();
+          showLocalNotification(sender?.username || 'New message', msg.content);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        () => fetchUnreadTotal()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchUnreadTotal]);
 
   useEffect(() => {
     // Load persisted i18n language on mount
@@ -162,7 +255,14 @@ const AppNavigator: React.FC = () => {
           onPress={() => setCurrentTab('conversations')}
           activeOpacity={0.7}
         >
-          <MessageSquare size={22} color={currentTab === 'conversations' ? theme.colors.primary : theme.colors.textMuted} />
+          <View>
+            <MessageSquare size={22} color={currentTab === 'conversations' ? theme.colors.primary : theme.colors.textMuted} />
+            {totalUnread > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{totalUnread > 99 ? '99+' : totalUnread}</Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.tabLabel, currentTab === 'conversations' && styles.activeTabLabel]}>
             {t('nav.messages')}
           </Text>
@@ -230,5 +330,23 @@ const styles = StyleSheet.create({
   activeTabLabel: {
     color: theme.colors.primary,
     fontWeight: '800',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -12,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: theme.colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 14,
   },
 });
