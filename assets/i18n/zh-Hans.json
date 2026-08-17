@@ -81,7 +81,8 @@
     "offline": "连接中断（尝试重连）",
     "unread": "未读",
     "read": "已读",
-    "load_more": "加载更多消息"
+    "load_more": "加载更多消息",
+    "blocked_hint": "此对话已被拉黑，无法发送消息"
   },
   "profile": {
     "title": "个人中心",
@@ -91,7 +92,17 @@
     "logout_confirm": "确定要退出吗？",
     "other_title": "个人资料",
     "not_found": "未找到该用户",
-    "member_since": "加入于 {{date}}"
+    "member_since": "加入于 {{date}}",
+    "blocklist_title": "黑名单",
+    "blocklist_empty": "您尚未拉黑任何人",
+    "block_user": "加入黑名单",
+    "unblock_user": "移出黑名单",
+    "blocked_label": "已拉黑",
+    "profile_unavailable": "无法查看该用户资料",
+    "blocked_confirm_title": "加入黑名单",
+    "blocked_confirm_message": "确定拉黑该用户？此后双方将互相看不到对方的话题、无法互发消息，且无法查看对方资料，直到双方都解除。",
+    "unblocked_confirm_title": "移出黑名单",
+    "unblocked_confirm_message": "确定将该用户移出黑名单？"
   },
   "nav": {
     "feed": "话题大厅",

@@ -81,7 +81,8 @@
     "offline": "Connection lost (reconnecting)",
     "unread": "Unread",
     "read": "Read",
-    "load_more": "Load earlier messages"
+    "load_more": "Load earlier messages",
+    "blocked_hint": "You cannot send messages in this conversation"
   },
   "profile": {
     "title": "Profile & Settings",
@@ -91,7 +92,17 @@
     "logout_confirm": "Are you sure you want to log out?",
     "other_title": "Profile",
     "not_found": "User not found",
-    "member_since": "Member since {{date}}"
+    "member_since": "Member since {{date}}",
+    "blocklist_title": "Blocked Users",
+    "blocklist_empty": "You haven't blocked anyone",
+    "block_user": "Block User",
+    "unblock_user": "Remove from Blocklist",
+    "blocked_label": "Blocked",
+    "profile_unavailable": "This profile is unavailable",
+    "blocked_confirm_title": "Block User",
+    "blocked_confirm_message": "Block this user? You won't see their topics and can't message each other until both sides unblock.",
+    "unblocked_confirm_title": "Remove from Blocklist",
+    "unblocked_confirm_message": "Remove this user from your blocklist?"
   },
   "nav": {
     "feed": "Topic Hall",

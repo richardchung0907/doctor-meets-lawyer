@@ -193,6 +193,7 @@ const AppNavigator: React.FC = () => {
       <ChatRoomScreen
         conversationId={activeChat.id}
         recipientName={activeChat.recipientName}
+        recipientId={activeChat.recipientId}
         onPressRecipient={() => setViewingProfileId(activeChat.recipientId)}
         onBack={() => {
           setActiveChat(null);

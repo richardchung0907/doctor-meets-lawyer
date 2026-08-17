@@ -18,10 +18,12 @@ import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { theme } from '../theme';
+import { isBlockedWith } from '../lib/blocklist';
 
 interface ChatRoomScreenProps {
   conversationId: string;
   recipientName: string;
+  recipientId: string;
   onPressRecipient: () => void;
   onBack: () => void;
 }
@@ -29,6 +31,7 @@ interface ChatRoomScreenProps {
 export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   conversationId,
   recipientName,
+  recipientId,
   onPressRecipient,
   onBack,
 }) => {
@@ -40,6 +43,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [sending, setSending] = useState<boolean>(false);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('connected');
+  const [blocked, setBlocked] = useState<boolean>(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -113,6 +117,16 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
     };
   }, [conversationId, user]);
 
+  useEffect(() => {
+    let cancelled = false;
+    isBlockedWith(recipientId).then((blockedActive) => {
+      if (!cancelled) setBlocked(blockedActive);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [recipientId]);
+
   const handleSendMessage = async () => {
     if (!inputText.trim() || !user || sending) return;
 
@@ -173,6 +187,12 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 
       <ConnectionStatusBanner status={realtimeStatus} />
 
+      {blocked && (
+        <View style={styles.blockedBanner}>
+          <Text style={styles.blockedBannerText}>{t('chat.blocked_hint')}</Text>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -230,18 +250,19 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
         {/* Input Dock */}
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.textInput}
-            placeholder={t('chat.input_placeholder')}
+            style={[styles.textInput, blocked && styles.textInputDisabled]}
+            placeholder={blocked ? t('chat.blocked_hint') : t('chat.input_placeholder')}
             placeholderTextColor={theme.colors.textFaint}
             value={inputText}
             onChangeText={setInputText}
             multiline
+            editable={!blocked}
           />
 
           <TouchableOpacity
-            style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, (!inputText.trim() || sending || blocked) && styles.sendBtnDisabled]}
             onPress={handleSendMessage}
-            disabled={!inputText.trim() || sending}
+            disabled={!inputText.trim() || sending || blocked}
             activeOpacity={0.8}
           >
             {sending ? (
@@ -382,5 +403,22 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     backgroundColor: theme.colors.borderStrong,
+  },
+  blockedBanner: {
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(239, 68, 68, 0.3)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  blockedBannerText: {
+    color: theme.colors.danger,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  textInputDisabled: {
+    opacity: 0.6,
   },
 });

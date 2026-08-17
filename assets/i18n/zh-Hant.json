@@ -81,7 +81,8 @@
     "offline": "連線中斷（嘗試重連）",
     "unread": "未讀",
     "read": "已讀",
-    "load_more": "載入更多訊息"
+    "load_more": "載入更多訊息",
+    "blocked_hint": "此對話已被封鎖，無法發送訊息"
   },
   "profile": {
     "title": "個人中心",
@@ -91,7 +92,17 @@
     "logout_confirm": "確定要登出嗎？",
     "other_title": "個人資料",
     "not_found": "未找到該用戶",
-    "member_since": "加入於 {{date}}"
+    "member_since": "加入於 {{date}}",
+    "blocklist_title": "黑名單",
+    "blocklist_empty": "您尚未封鎖任何人",
+    "block_user": "加入黑名單",
+    "unblock_user": "移出黑名單",
+    "blocked_label": "已封鎖",
+    "profile_unavailable": "無法查看該用戶資料",
+    "blocked_confirm_title": "加入黑名單",
+    "blocked_confirm_message": "確定封鎖該用戶？此後雙方將互相看不到對方話題、無法互發訊息，且無法查看對方資料，直到雙方都解除。",
+    "unblocked_confirm_title": "移出黑名單",
+    "unblocked_confirm_message": "確定將該用戶移出黑名單？"
   },
   "nav": {
     "feed": "話題大廳",
