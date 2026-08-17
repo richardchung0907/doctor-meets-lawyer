@@ -1,16 +1,18 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Clock, User } from 'lucide-react-native';
+import { MessageSquare, Clock, User, UserMinus } from 'lucide-react-native';
 import { Topic, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from './ProfessionBadge';
 import { theme } from '../theme';
+import { blockUser } from '../lib/blocklist';
 
 interface TopicCardProps {
   topic: Topic;
   currentUserId?: string;
   onStartChat: (topic: Topic) => void;
   onPressAuthor: (userId: string) => void;
+  onUserBlocked?: () => void;
 }
 
 export const TopicCard: React.FC<TopicCardProps> = ({
@@ -18,6 +20,7 @@ export const TopicCard: React.FC<TopicCardProps> = ({
   currentUserId,
   onStartChat,
   onPressAuthor,
+  onUserBlocked,
 }) => {
   const { t } = useTranslation();
 
@@ -42,6 +45,20 @@ export const TopicCard: React.FC<TopicCardProps> = ({
     }
   };
 
+  const handleBlockAuthor = () => {
+    Alert.alert(t('profile.blocked_confirm_title'), t('profile.blocked_confirm_message'), [
+      { text: t('feed.cancel'), style: 'cancel' },
+      {
+        text: t('profile.block_user'),
+        style: 'destructive',
+        onPress: async () => {
+          const ok = await blockUser(topic.user_id);
+          if (ok) onUserBlocked?.();
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={styles.card}>
       {/* Author Header */}
@@ -51,9 +68,27 @@ export const TopicCard: React.FC<TopicCardProps> = ({
             <User size={18} color={theme.colors.textMuted} />
           </View>
           <View style={styles.nameBlock}>
-            <TouchableOpacity onPress={() => onPressAuthor(topic.user_id)} activeOpacity={0.7}>
-              <Text style={styles.username}>{authorName}</Text>
-            </TouchableOpacity>
+            <View style={styles.nameRow}>
+              <TouchableOpacity
+                onPress={() => onPressAuthor(topic.user_id)}
+                activeOpacity={0.7}
+                style={styles.nameLink}
+              >
+                <Text style={styles.username} numberOfLines={1}>
+                  {authorName}
+                </Text>
+              </TouchableOpacity>
+              {!isOwnTopic && (
+                <TouchableOpacity
+                  onPress={handleBlockAuthor}
+                  activeOpacity={0.7}
+                  style={styles.blockIconBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <UserMinus size={14} color={theme.colors.danger} />
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={styles.timeRow}>
               <Clock size={12} color={theme.colors.textFaint} />
               <Text style={styles.timeText}>{formatDate(topic.created_at)}</Text>
@@ -125,6 +160,17 @@ const styles = StyleSheet.create({
   },
   nameBlock: {
     gap: 2,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  nameLink: {
+    flexShrink: 1,
+  },
+  blockIconBtn: {
+    padding: 2,
   },
   username: {
     color: theme.colors.primaryDark,

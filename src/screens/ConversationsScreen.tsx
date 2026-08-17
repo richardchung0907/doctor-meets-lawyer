@@ -8,14 +8,16 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, User, ChevronRight } from 'lucide-react-native';
+import { MessageSquare, User, ChevronRight, UserMinus } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Conversation, Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { theme } from '../theme';
+import { blockUser } from '../lib/blocklist';
 
 interface ConversationsScreenProps {
   onOpenChat: (conversationId: string, recipientName: string, recipientId: string) => void;
@@ -122,6 +124,19 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
     }
   };
 
+  const handleBlockUser = (targetId: string) => {
+    Alert.alert(t('profile.blocked_confirm_title'), t('profile.blocked_confirm_message'), [
+      { text: t('feed.cancel'), style: 'cancel' },
+      {
+        text: t('profile.block_user'),
+        style: 'destructive',
+        onPress: async () => {
+          await blockUser(targetId);
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topBar}>
@@ -154,15 +169,27 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
 
                 <View style={styles.convDetails}>
                   <View style={styles.topRow}>
-                    <TouchableOpacity
-                      onPress={() => partner?.id && onViewUserProfile(partner.id)}
-                      activeOpacity={0.7}
-                      style={{ flexShrink: 1 }}
-                    >
-                      <Text style={styles.partnerName} numberOfLines={1}>
-                        {partnerName}
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={styles.nameWithBlock}>
+                      <TouchableOpacity
+                        onPress={() => partner?.id && onViewUserProfile(partner.id)}
+                        activeOpacity={0.7}
+                        style={styles.nameLink}
+                      >
+                        <Text style={styles.partnerName} numberOfLines={1}>
+                          {partnerName}
+                        </Text>
+                      </TouchableOpacity>
+                      {partner?.id && partner.id !== user?.id && (
+                        <TouchableOpacity
+                          onPress={() => handleBlockUser(partner.id)}
+                          activeOpacity={0.7}
+                          style={styles.blockIconBtn}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <UserMinus size={14} color={theme.colors.danger} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     <Text style={styles.timeText}>
                       {formatDate(item.last_message?.created_at || item.updated_at)}
                     </Text>
@@ -263,6 +290,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
+  },
+  nameWithBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  nameLink: {
+    flexShrink: 1,
+  },
+  blockIconBtn: {
+    padding: 2,
   },
   partnerName: {
     color: theme.colors.primaryDark,
