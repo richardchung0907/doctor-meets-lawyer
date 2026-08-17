@@ -10,12 +10,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, User, LogOut, Globe, Mail, Shield, Check } from 'lucide-react-native';
+import { ArrowLeft, User, LogOut, Globe, Mail, Shield, Check, UserX } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
 import { theme } from '../theme';
+import { BlockedEntry, fetchMyBlocklist, unblockUser } from '../lib/blocklist';
 
 interface ProfileScreenProps {
   onBack: () => void;
@@ -27,6 +28,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
   const { profile, user, signOut, isLoading } = useAuth();
 
   const [confirmLogoutModal, setConfirmLogoutModal] = useState(false);
+  const [blocklistModal, setBlocklistModal] = useState(false);
+  const [blocklist, setBlocklist] = useState<BlockedEntry[]>([]);
+  const [blocklistLoading, setBlocklistLoading] = useState(false);
 
   const handleLogout = async () => {
     setConfirmLogoutModal(false);
@@ -40,6 +44,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
       : i18n.language === 'zh-Hans'
       ? '简体中文'
       : 'English';
+
+  const loadBlocklist = async () => {
+    setBlocklistLoading(true);
+    const entries = await fetchMyBlocklist();
+    setBlocklist(entries);
+    setBlocklistLoading(false);
+  };
+
+  const openBlocklist = async () => {
+    setBlocklistModal(true);
+    await loadBlocklist();
+  };
+
+  const handleRemoveFromBlocklist = async (blockedId: string) => {
+    const ok = await unblockUser(blockedId);
+    if (ok) {
+      setBlocklist((prev) => prev.filter((e) => e.blocked_id !== blockedId));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -92,6 +115,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
           </View>
         </View>
 
+        {/* Blocklist Entry */}
+        <TouchableOpacity style={styles.sectionCard} onPress={openBlocklist} activeOpacity={0.7}>
+          <View style={styles.sectionItem}>
+            <View style={styles.itemLeft}>
+              <UserX size={20} color={theme.colors.danger} />
+              <View>
+                <Text style={styles.itemTitle}>{t('profile.blocklist_title')}</Text>
+                <Text style={styles.itemSub}>
+                  {blocklistLoading ? '…' : `${blocklist.length} ${t('profile.blocked_label')}`}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.chevronText}>›</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Logout Action */}
         <TouchableOpacity
           style={styles.logoutBtn}
@@ -124,6 +163,58 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
             </View>
           </View>
         </View>
+      </Modal>
+      {/* Blocklist Modal */}
+      <Modal visible={blocklistModal} transparent animationType="fade" onRequestClose={() => setBlocklistModal(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setBlocklistModal(false)}
+        >
+          <View style={styles.blocklistModalCard}>
+            <Text style={styles.modalTitle}>{t('profile.blocklist_title')}</Text>
+
+            {blocklistLoading ? (
+              <View style={styles.blocklistCentered}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            ) : blocklist.length === 0 ? (
+              <View style={styles.blocklistCentered}>
+                <UserX size={28} color={theme.colors.textFaint} />
+                <Text style={styles.blocklistEmpty}>{t('profile.blocklist_empty')}</Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.blocklistScroll}>
+                {blocklist.map((entry) => {
+                  const name = entry.blocked_user?.[0]?.username || 'Professional User';
+                  return (
+                    <View key={entry.blocked_id} style={styles.blocklistRow}>
+                      <View style={styles.blocklistAvatar}>
+                        <Text style={styles.blocklistAvatarText}>
+                          {name.substring(0, 1).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={styles.blocklistName} numberOfLines={1}>
+                        {name}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.removeBtn}
+                        onPress={() => handleRemoveFromBlocklist(entry.blocked_id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.removeBtnText}>{t('profile.unblock_user')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity style={styles.blocklistClose} onPress={() => setBlocklistModal(false)}>
+              <Text style={styles.blocklistCloseText}>{t('feed.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -300,5 +391,87 @@ const styles = StyleSheet.create({
   confirmLogoutText: {
     color: theme.colors.white,
     fontWeight: '800',
+  },
+  chevronText: {
+    color: theme.colors.textFaint,
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  blocklistModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: 420,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  blocklistCentered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 24,
+  },
+  blocklistEmpty: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  blocklistScroll: {
+    alignSelf: 'stretch',
+    maxHeight: 260,
+  },
+  blocklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
+  },
+  blocklistAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blocklistAvatarText: {
+    color: theme.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  blocklistName: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  removeBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  removeBtnText: {
+    color: theme.colors.danger,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  blocklistClose: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  blocklistCloseText: {
+    color: theme.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

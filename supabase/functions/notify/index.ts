@@ -52,6 +52,18 @@ Deno.serve(async (req) => {
     const conv = msg.conversations as { participant1_id: string; participant2_id: string };
     const recipientId = conv.participant1_id === msg.sender_id ? conv.participant2_id : conv.participant1_id;
 
+    // 黑名单防御：任一方拉黑对方，则不发送推送（RLS 已阻断插入，此为兜底）
+    const { data: block, error: blockErr } = await supabase
+      .from('blocked_users')
+      .select('blocker_id')
+      .or(
+        `and(blocker_id.eq.${msg.sender_id},blocked_id.eq.${recipientId}),` +
+        `and(blocker_id.eq.${recipientId},blocked_id.eq.${msg.sender_id})`
+      );
+    if (!blockErr && (block?.length ?? 0) > 0) {
+      return json(200, { ok: true, skipped: 'blocked' });
+    }
+
     const [{ data: recipient }, { data: sender }] = await Promise.all([
       supabase.from('profiles').select('push_token').eq('id', recipientId).maybeSingle(),
       supabase.from('profiles').select('username').eq('id', msg.sender_id).maybeSingle(),

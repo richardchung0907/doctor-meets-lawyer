@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,15 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, User, Calendar } from 'lucide-react-native';
+import { ArrowLeft, User, Calendar, UserMinus, UserPlus } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { theme } from '../theme';
+import { isBlockedWith, isBlockedByMe, blockUser, unblockUser } from '../lib/blocklist';
 
 interface OtherUserProfileScreenProps {
   userId: string;
@@ -26,34 +28,75 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockedByMe, setBlockedByMe] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase
+  const load = useCallback(async () => {
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const [{ data, error }, blockActive, mine] = await Promise.all([
+        supabase
           .from('profiles')
           .select('id, username, profession, gender, age, avatar_url, bio, created_at')
           .eq('id', userId)
-          .maybeSingle();
-        if (!cancelled) {
-          if (error || !data) {
-            setNotFound(true);
-          } else {
-            setProfile(data as Profile);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        if (!cancelled) setNotFound(true);
-      } finally {
-        if (!cancelled) setLoading(false);
+          .maybeSingle(),
+        isBlockedWith(userId),
+        isBlockedByMe(userId),
+      ]);
+      if (error || !data) {
+        setNotFound(true);
+      } else {
+        setProfile(data as Profile);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+      setBlocked(blockActive);
+      setBlockedByMe(mine);
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleBlock = () => {
+    Alert.alert(t('profile.blocked_confirm_title'), t('profile.blocked_confirm_message'), [
+      { text: t('feed.cancel'), style: 'cancel' },
+      {
+        text: t('profile.block_user'),
+        style: 'destructive',
+        onPress: async () => {
+          const ok = await blockUser(userId);
+          if (ok) {
+            setBlocked(true);
+            setBlockedByMe(true);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleUnblock = () => {
+    Alert.alert(t('profile.unblocked_confirm_title'), t('profile.unblocked_confirm_message'), [
+      { text: t('feed.cancel'), style: 'cancel' },
+      {
+        text: t('profile.unblock_user'),
+        onPress: async () => {
+          const ok = await unblockUser(userId);
+          if (ok) {
+            // 仅当双方都不再拉黑时，黑名单效力才取消
+            const stillBlocked = await isBlockedWith(userId);
+            setBlocked(stillBlocked);
+            setBlockedByMe(false);
+          }
+        },
+      },
+    ]);
+  };
 
   const joinDate = profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '';
   const metaParts = [
@@ -80,6 +123,18 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
         <View style={styles.centered}>
           <User size={40} color={theme.colors.textFaint} />
           <Text style={styles.notFoundText}>{t('profile.not_found')}</Text>
+        </View>
+      ) : blocked ? (
+        /* 黑名单生效：双方均不能查看对方资料 */
+        <View style={styles.centered}>
+          <UserMinus size={40} color={theme.colors.danger} />
+          <Text style={styles.blockedText}>{t('profile.profile_unavailable')}</Text>
+          {blockedByMe && (
+            <TouchableOpacity style={styles.unblockBtn} onPress={handleUnblock} activeOpacity={0.8}>
+              <UserPlus size={16} color={theme.colors.danger} />
+              <Text style={styles.unblockBtnText}>{t('profile.unblock_user')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -114,6 +169,12 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
               </View>
             ) : null}
           </View>
+
+          {/* Block Action */}
+          <TouchableOpacity style={styles.blockBtn} onPress={handleBlock} activeOpacity={0.8}>
+            <UserMinus size={16} color={theme.colors.danger} />
+            <Text style={styles.blockBtnText}>{t('profile.block_user')}</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -148,7 +209,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     padding: 20,
   },
   notFoundText: {
@@ -156,8 +217,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
   },
+  blockedText: {
+    color: theme.colors.danger,
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  unblockBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  unblockBtnText: {
+    color: theme.colors.danger,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   scrollContent: {
     padding: 20,
+    gap: 16,
   },
   userCard: {
     backgroundColor: theme.colors.surface,
@@ -214,5 +298,21 @@ const styles = StyleSheet.create({
   joinText: {
     color: theme.colors.textFaint,
     fontSize: 12,
+  },
+  blockBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 16,
+    paddingVertical: 14,
+  },
+  blockBtnText: {
+    color: theme.colors.danger,
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
