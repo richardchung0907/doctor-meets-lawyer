@@ -15,6 +15,7 @@ import { ArrowLeft, Mail, Lock, User, FileText, ChevronRight } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { ProfessionKey, PROFESSION_KEYS, PROFESSION_COLORS } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { theme } from '../theme';
 
 interface AuthScreenProps {
   initialMode?: 'login' | 'signup';
@@ -91,7 +92,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerBar}>
         <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-          <ArrowLeft size={22} color="#F8FAFC" />
+          <ArrowLeft size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {mode === 'signup' ? t('auth.signup_title') : t('auth.login_title')}
@@ -146,11 +147,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t('auth.username')} *</Text>
                 <View style={styles.inputWrapper}>
-                  <User size={18} color="#64748B" />
+                  <User size={18} color={theme.colors.textFaint} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. Dr. John / Attorney Smith"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={theme.colors.textFaint}
                     value={username}
                     onChangeText={setUsername}
                   />
@@ -171,13 +172,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                         style={[
                           styles.profPill,
                           {
-                            backgroundColor: isSelected ? colors.bg : '#1E293B',
-                            borderColor: isSelected ? colors.primary : '#334155',
+                            backgroundColor: isSelected ? colors.bg : theme.colors.surfaceMuted,
+                            borderColor: isSelected ? colors.primary : theme.colors.border,
                           },
                         ]}
                         onPress={() => setProfession(key)}
                       >
-                        <Text style={{ color: isSelected ? colors.primary : '#94A3B8', fontWeight: isSelected ? '700' : '500' }}>
+                        <Text style={{ color: isSelected ? colors.primary : theme.colors.textMuted, fontWeight: isSelected ? '700' : '500' }}>
                           {label}
                         </Text>
                       </TouchableOpacity>
@@ -191,11 +192,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t('auth.email')} *</Text>
             <View style={styles.inputWrapper}>
-              <Mail size={18} color="#64748B" />
+              <Mail size={18} color={theme.colors.textFaint} />
               <TextInput
                 style={styles.textInput}
                 placeholder="name@example.com"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.colors.textFaint}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -207,11 +208,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t('auth.password')} *</Text>
             <View style={styles.inputWrapper}>
-              <Lock size={18} color="#64748B" />
+              <Lock size={18} color={theme.colors.textFaint} />
               <TextInput
                 style={styles.textInput}
                 placeholder="••••••••"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.colors.textFaint}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -224,11 +225,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t('auth.bio')}</Text>
                 <View style={[styles.inputWrapper, { height: 80, alignItems: 'flex-start', paddingTop: 10 }]}>
-                  <FileText size={18} color="#64748B" />
+                  <FileText size={18} color={theme.colors.textFaint} />
                   <TextInput
                     style={[styles.textInput, { height: '100%', textAlignVertical: 'top' }]}
                     placeholder="Brief professional background or area of practice..."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={theme.colors.textFaint}
                     multiline
                     value={bio}
                     onChangeText={setBio}
@@ -245,13 +246,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             activeOpacity={0.8}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={theme.colors.white} />
             ) : (
               <>
                 <Text style={styles.submitBtnText}>
                   {mode === 'signup' ? t('auth.signup') : t('auth.login')}
                 </Text>
-                <ChevronRight size={18} color="#FFFFFF" />
+                <ChevronRight size={18} color={theme.colors.white} />
               </>
             )}
           </TouchableOpacity>
@@ -276,7 +277,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   headerBar: {
     flexDirection: 'row',
@@ -285,15 +286,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   backButton: {
     padding: 6,
     borderRadius: 12,
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
   },
   headerTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
   },
@@ -303,13 +304,13 @@ const styles = StyleSheet.create({
   errorBox: {
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: theme.colors.danger,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
   errorText: {
-    color: '#FCA5A5',
+    color: theme.colors.dangerText,
     fontSize: 14,
     textAlign: 'center',
     fontWeight: '600',
@@ -317,20 +318,20 @@ const styles = StyleSheet.create({
   professionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 16,
     padding: 14,
     marginBottom: 20,
     gap: 12,
   },
   profBannerLabel: {
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   modeTabs: {
     flexDirection: 'row',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
@@ -342,15 +343,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontWeight: '800',
   },
   formContainer: {
@@ -360,24 +361,24 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   label: {
-    color: '#CBD5E1',
+    color: theme.colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     paddingHorizontal: 14,
     height: 48,
     gap: 10,
   },
   textInput: {
     flex: 1,
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 15,
   },
   profSelectorRow: {
@@ -392,20 +393,20 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     flexDirection: 'row',
-    backgroundColor: '#0EA5E9',
+    backgroundColor: theme.colors.primary,
     borderRadius: 14,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 12,
     gap: 8,
-    shadowColor: '#0EA5E9',
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
   },
   submitBtnText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toggleModeText: {
-    color: '#38BDF8',
+    color: theme.colors.primaryDark,
     fontSize: 14,
     fontWeight: '600',
   },

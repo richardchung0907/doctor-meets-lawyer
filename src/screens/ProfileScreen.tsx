@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
+import { theme } from '../theme';
 
 interface ProfileScreenProps {
   onBack: () => void;
@@ -45,7 +46,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
       {/* Header */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <ArrowLeft size={22} color="#F8FAFC" />
+          <ArrowLeft size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.barTitle}>{t('profile.title')}</Text>
         <View style={{ width: 32 }} />
@@ -55,7 +56,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
         {/* User Info Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarLarge}>
-            <User size={36} color="#38BDF8" />
+            <User size={36} color={theme.colors.primary} />
           </View>
 
           <Text style={styles.username}>{profile?.username || 'Professional User'}</Text>
@@ -65,7 +66,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
           )}
 
           <View style={styles.emailRow}>
-            <Mail size={14} color="#64748B" />
+            <Mail size={14} color={theme.colors.textFaint} />
             <Text style={styles.emailText}>{user?.email}</Text>
           </View>
 
@@ -80,7 +81,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
         <View style={styles.sectionCard}>
           <View style={styles.sectionItem}>
             <View style={styles.itemLeft}>
-              <Globe size={20} color="#0EA5E9" />
+              <Globe size={20} color={theme.colors.primary} />
               <View>
                 <Text style={styles.itemTitle}>{t('profile.language_setting')}</Text>
                 <Text style={styles.itemSub}>{currentLangLabel}</Text>
@@ -97,7 +98,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
           onPress={() => setConfirmLogoutModal(true)}
           activeOpacity={0.8}
         >
-          <LogOut size={18} color="#EF4444" />
+          <LogOut size={18} color={theme.colors.danger} />
           <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -131,7 +132,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -140,15 +141,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: theme.colors.border,
   },
   backBtn: {
     padding: 6,
     borderRadius: 12,
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surfaceMuted,
   },
   barTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
   },
@@ -157,10 +158,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   userCard: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     padding: 24,
     alignItems: 'center',
     gap: 12,
@@ -169,14 +170,14 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#38BDF8',
+    borderColor: theme.colors.primaryLight,
   },
   username: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -186,27 +187,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emailText: {
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontSize: 13,
   },
   bioBox: {
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 12,
     padding: 12,
     width: '100%',
     marginTop: 4,
   },
   bioText: {
-    color: '#CBD5E1',
+    color: theme.colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
   },
   sectionCard: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     padding: 16,
   },
   sectionItem: {
@@ -220,12 +221,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
   itemSub: {
-    color: '#64748B',
+    color: theme.colors.textMuted,
     fontSize: 12,
   },
   logoutBtn: {
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   logoutText: {
-    color: '#EF4444',
+    color: theme.colors.danger,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -255,21 +256,21 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     padding: 24,
     alignItems: 'center',
     gap: 12,
   },
   modalTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
   },
   modalSub: {
-    color: '#CBD5E1',
+    color: theme.colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -282,22 +283,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 12,
   },
   cancelModalText: {
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontWeight: '600',
   },
   confirmLogoutBtn: {
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#EF4444',
+    backgroundColor: theme.colors.danger,
     borderRadius: 12,
   },
   confirmLogoutText: {
-    color: '#FFFFFF',
+    color: theme.colors.white,
     fontWeight: '800',
   },
 });

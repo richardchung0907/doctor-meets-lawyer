@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react-native';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
+import { theme } from '../theme';
 
 export const LanguageSelector: React.FC = () => {
   const { i18n, t } = useTranslation();
@@ -28,7 +29,7 @@ export const LanguageSelector: React.FC = () => {
         onPress={() => setModalVisible(true)}
         activeOpacity={0.7}
       >
-        <Globe size={18} color="#38BDF8" />
+        <Globe size={18} color={theme.colors.primary} />
         <Text style={styles.triggerText}>{currentLangLabel}</Text>
       </TouchableOpacity>
 
@@ -57,7 +58,7 @@ export const LanguageSelector: React.FC = () => {
                   <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>
                     {lang.label}
                   </Text>
-                  {isSelected && <Check size={18} color="#38BDF8" />}
+                  {isSelected && <Check size={18} color={theme.colors.primary} />}
                 </TouchableOpacity>
               );
             })}
@@ -72,16 +73,16 @@ const styles = StyleSheet.create({
   triggerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderColor: 'rgba(14, 165, 233, 0.4)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 6,
   },
   triggerText: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -95,15 +96,15 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
     padding: 20,
     gap: 12,
   },
   modalTitle: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 8,
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   langOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   langOptionSelected: {
-    borderColor: '#38BDF8',
+    borderColor: theme.colors.primary,
     backgroundColor: 'rgba(14, 165, 233, 0.15)',
   },
   flagText: {
@@ -128,12 +129,12 @@ const styles = StyleSheet.create({
   },
   langLabel: {
     flex: 1,
-    color: '#94A3B8',
+    color: theme.colors.textMuted,
     fontSize: 15,
     fontWeight: '500',
   },
   langLabelSelected: {
-    color: '#F8FAFC',
+    color: theme.colors.textPrimary,
     fontWeight: '700',
   },
 });
