@@ -31,6 +31,15 @@
     "scheme": "doctor-meets-lawyer",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "148ec880-37af-4762-b0f3-e5d3f78e6488"
+      }
+    },
+    "owner": "richardchung0907"
   }
 }

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 /**
@@ -36,6 +37,8 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 /**
  * 注册当前设备并返回 Expo Push Token（用于非 in-app 远程推送）。
  * Android 需要先创建通知渠道。
+ * projectId 优先从 EAS 配置 / app.json 读取；缺失时降级为本地通知
+ * （仅 in-app），不再报错。
  */
 export async function getExpoPushToken(): Promise<string | null> {
   try {
@@ -47,7 +50,21 @@ export async function getExpoPushToken(): Promise<string | null> {
         sound: 'default',
       });
     }
-    const token = await Notifications.getExpoPushTokenAsync();
+    // 兼容多种 manifest 形态：EAS 配置 / expoClient.extra / manifest2 顶层 extra
+    const manifestExtra = Constants.manifest2?.extra as
+      | { eas?: { projectId?: string } }
+      | undefined;
+    const projectId =
+      Constants.easConfig?.projectId ??
+      (Constants.expoConfig?.extra?.eas as { projectId?: string } | undefined)?.projectId ??
+      manifestExtra?.eas?.projectId;
+    if (!projectId) {
+      console.warn(
+        'No EAS projectId configured; remote push is disabled. Run `npx eas init` to enable it.'
+      );
+      return null;
+    }
+    const token = await Notifications.getExpoPushTokenAsync({ projectId });
     return token.data;
   } catch (err) {
     console.error('Failed to get Expo push token:', err);
