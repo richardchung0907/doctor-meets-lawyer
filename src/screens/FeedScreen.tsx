@@ -252,6 +252,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
               currentUserId={user?.id}
               onStartChat={handleStartChatFromTopic}
               onPressAuthor={onViewUserProfile}
+              onUserBlocked={() => fetchTopics()}
             />
           )}
           contentContainerStyle={styles.listContent}
