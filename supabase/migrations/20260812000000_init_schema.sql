@@ -204,10 +204,19 @@ CREATE POLICY "Users can send messages in their conversations"
         )
     );
 
--- 9. ENABLE SUPABASE REALTIME FOR TABLES
-ALTER PUBLICATION supabase_realtime ADD TABLE public.topics;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+-- 9. ENABLE SUPABASE REALTIME FOR TABLES (idempotent: skip if already member)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'topics') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.topics;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'conversations') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'messages') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+  END IF;
+END $$;
 
 -- 10. GRANTS FOR AUTHENTICATED AND ANON ROLES
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
