@@ -1,5 +1,5 @@
 {
-  "app_title": "医法会 Doctor Meets Lawyer",
+  "app_title": "Doctor Meets Lawyer",
   "welcome_tagline": "跨界专业 ‧ 深度交流",
   "onboarding": {
     "select_profession": "请选择您的专业身份",
@@ -88,7 +88,7 @@
     "language_setting": "切换应用程序语言",
     "current_language": "当前语言",
     "logout": "退出账号",
-    "logout_confirm": "确定要退出医法会吗？"
+    "logout_confirm": "确定要退出吗？"
   },
   "nav": {
     "feed": "话题大厅",
