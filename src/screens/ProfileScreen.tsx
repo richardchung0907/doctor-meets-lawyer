@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -63,6 +63,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
       setBlocklist((prev) => prev.filter((e) => e.blocked_id !== blockedId));
     }
   };
+
+  // 挂载时即加载黑名单，保证入口处的数量始终正确
+  useEffect(() => {
+    loadBlocklist();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
