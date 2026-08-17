@@ -28,6 +28,7 @@
     "expo-asset": "~11.0.3",
     "expo-font": "~13.0.4",
     "expo-localization": "~16.0.1",
+    "expo-notifications": "~0.29.14",
     "expo-router": "~4.0.17",
     "expo-status-bar": "~2.0.1",
     "i18next": "^24.2.2",
