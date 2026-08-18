@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Clock, User, UserMinus } from 'lucide-react-native';
+import { MessageSquare, Clock, User, UserMinus, UserCheck } from 'lucide-react-native';
 import { Topic, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from './ProfessionBadge';
 import { theme } from '../theme';
-import { blockUser } from '../lib/blocklist';
+import { blockUser, unblockUser, isBlockedByMe } from '../lib/blocklist';
 
 interface TopicCardProps {
   topic: Topic;
@@ -23,6 +23,18 @@ export const TopicCard: React.FC<TopicCardProps> = ({
   onUserBlocked,
 }) => {
   const { t } = useTranslation();
+  const [blockedByMe, setBlockedByMe] = useState(false);
+
+  // 我是否已拉黑该话题作者 → 决定名字旁显示“拉黑”还是“移出黑名单”
+  useEffect(() => {
+    let cancelled = false;
+    isBlockedByMe(topic.user_id).then((blocked) => {
+      if (!cancelled) setBlockedByMe(blocked);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [topic.user_id]);
 
   const isOwnTopic = currentUserId && topic.user_id === currentUserId;
   const authorProfession = (topic.profiles?.profession || 'other') as ProfessionKey;
@@ -53,10 +65,21 @@ export const TopicCard: React.FC<TopicCardProps> = ({
         style: 'destructive',
         onPress: async () => {
           const ok = await blockUser(topic.user_id);
-          if (ok) onUserBlocked?.();
+          if (ok) {
+            setBlockedByMe(true);
+            onUserBlocked?.();
+          }
         },
       },
     ]);
+  };
+
+  const handleUnblockAuthor = async () => {
+    const ok = await unblockUser(topic.user_id);
+    if (ok) {
+      setBlockedByMe(false);
+      onUserBlocked?.();
+    }
   };
 
   return (
@@ -79,14 +102,25 @@ export const TopicCard: React.FC<TopicCardProps> = ({
                 </Text>
               </TouchableOpacity>
               {!isOwnTopic && (
-                <TouchableOpacity
-                  onPress={handleBlockAuthor}
-                  activeOpacity={0.7}
-                  style={styles.blockIconBtn}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <UserMinus size={14} color={theme.colors.danger} />
-                </TouchableOpacity>
+                blockedByMe ? (
+                  <TouchableOpacity
+                    onPress={handleUnblockAuthor}
+                    activeOpacity={0.7}
+                    style={styles.blockIconBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <UserCheck size={14} color={theme.colors.success} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleBlockAuthor}
+                    activeOpacity={0.7}
+                    style={styles.blockIconBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <UserMinus size={14} color={theme.colors.danger} />
+                  </TouchableOpacity>
+                )
               )}
             </View>
             <View style={styles.timeRow}>

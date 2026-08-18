@@ -11,13 +11,13 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, User, ChevronRight, UserMinus } from 'lucide-react-native';
+import { MessageSquare, User, ChevronRight, UserMinus, UserCheck } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Conversation, Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { theme } from '../theme';
-import { blockUser } from '../lib/blocklist';
+import { blockUser, unblockUser } from '../lib/blocklist';
 
 interface ConversationsScreenProps {
   onOpenChat: (conversationId: string, recipientName: string, recipientId: string) => void;
@@ -31,11 +31,20 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  // 我已拉黑的用户 id 集合 → 决定名字旁显示“拉黑”还是“移出黑名单”
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
 
   const fetchConversations = async () => {
     if (!user) return;
     try {
       setLoading(true);
+
+      // 我的拉黑列表（blocked_users RLS 只允许看自己拉黑的，此处方向正确）
+      const { data: blkRows } = await supabase
+        .from('blocked_users')
+        .select('blocked_id')
+        .eq('blocker_id', user.id);
+      setBlockedIds(new Set((blkRows ?? []).map((r) => r.blocked_id)));
 
       // Query conversations where user is participant1 or participant2
       const { data, error } = await supabase
@@ -132,9 +141,15 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
         style: 'destructive',
         onPress: async () => {
           await blockUser(targetId);
+          fetchConversations();
         },
       },
     ]);
+  };
+
+  const handleUnblockUser = async (targetId: string) => {
+    const ok = await unblockUser(targetId);
+    if (ok) fetchConversations();
   };
 
   return (
@@ -180,14 +195,25 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
                         </Text>
                       </TouchableOpacity>
                       {partner?.id && partner.id !== user?.id && (
-                        <TouchableOpacity
-                          onPress={() => handleBlockUser(partner.id)}
-                          activeOpacity={0.7}
-                          style={styles.blockIconBtn}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <UserMinus size={14} color={theme.colors.danger} />
-                        </TouchableOpacity>
+                        blockedIds.has(partner.id) ? (
+                          <TouchableOpacity
+                            onPress={() => handleUnblockUser(partner.id)}
+                            activeOpacity={0.7}
+                            style={styles.blockIconBtn}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <UserCheck size={14} color={theme.colors.success} />
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => handleBlockUser(partner.id)}
+                            activeOpacity={0.7}
+                            style={styles.blockIconBtn}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <UserMinus size={14} color={theme.colors.danger} />
+                          </TouchableOpacity>
+                        )
                       )}
                     </View>
                     <Text style={styles.timeText}>
