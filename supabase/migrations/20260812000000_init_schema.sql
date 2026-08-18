@@ -81,19 +81,23 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON public.messages(conversa
 
 -- 7. AUTOMATED POSTGRES TRIGGER: on_auth_user_created
 -- Automatically registers a user profile alongside their selected profession key upon signup
+-- 注意：必须用 public. 前缀 + SET search_path = public，因为 Supabase 平台
+-- 将 supabase_auth_admin 的 search_path 设为 auth（不含 public），未限定 schema
+-- 的 profession_enum 会解析失败，导致所有新用户注册 500
+-- （参见迁移 20260818000000_fix_auth_trigger_search_path.sql）。
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
     prof_text TEXT;
-    prof_val profession_enum;
+    prof_val public.profession_enum;
 BEGIN
     prof_text := new.raw_user_meta_data->>'profession';
     
     -- Cast string metadata to profession_enum safely
     BEGIN
-        prof_val := prof_text::profession_enum;
+        prof_val := prof_text::public.profession_enum;
     EXCEPTION WHEN OTHERS THEN
-        prof_val := 'other'::profession_enum;
+        prof_val := 'other'::public.profession_enum;
     END;
 
     INSERT INTO public.profiles (id, username, profession, gender, age, avatar_url, bio)
@@ -113,7 +117,7 @@ BEGIN
 
     RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Drop trigger if exists and recreate
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
