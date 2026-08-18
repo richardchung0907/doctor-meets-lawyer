@@ -40,24 +40,42 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  // 对方在线状态：last_seen 距今 < 2 分钟判定在线（心跳每 60s 一次）
+  // 对方在线状态：综合三个信号，任一在窗口内即判定在线——
+  //   1) 实时收到对方消息（realtime，覆盖 bot/模拟用户直插消息无心跳的场景）
+  //   2) 对方 last_seen 心跳（真实用户 app 前台，每 60s 一次）
+  //   3) 本会话中对方最近一条消息时间（进入聊天室时的兜底判定）
   const [partnerOnline, setPartnerOnline] = useState(true);
+  const lastPartnerMessageAtRef = useRef<number>(0);
   const ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
   const fetchPartnerPresence = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('last_seen')
-      .eq('id', recipientId)
-      .maybeSingle();
+    const [profileRes, lastMsgRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('last_seen')
+        .eq('id', recipientId)
+        .maybeSingle(),
+      supabase
+        .from('messages')
+        .select('created_at')
+        .eq('conversation_id', conversationId)
+        .eq('sender_id', recipientId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
     // 查询失败保持当前状态，避免网络抖动误判离线
-    if (error) return;
-    if (data?.last_seen) {
-      setPartnerOnline(Date.now() - new Date(data.last_seen).getTime() < ONLINE_WINDOW_MS);
-    } else {
-      setPartnerOnline(false);
-    }
-  }, [recipientId]);
+    if (profileRes.error) return;
+
+    const now = Date.now();
+    const online =
+      now - lastPartnerMessageAtRef.current < ONLINE_WINDOW_MS ||
+      (!!profileRes.data?.last_seen &&
+        now - new Date(profileRes.data.last_seen).getTime() < ONLINE_WINDOW_MS) ||
+      (!!lastMsgRes.data?.created_at &&
+        now - new Date(lastMsgRes.data.created_at).getTime() < ONLINE_WINDOW_MS);
+    setPartnerOnline(online);
+  }, [recipientId, conversationId]);
 
   // 进入时查询 + 每 30s 刷新
   useEffect(() => {
@@ -123,6 +141,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 
           // Automatically mark as read if received from other party while in room
           if (user && newMsg.sender_id !== user.id) {
+            // 对方刚发来消息 = 当下在线（覆盖 bot/模拟用户无心跳的场景）
+            lastPartnerMessageAtRef.current = Date.now();
+            setPartnerOnline(true);
             await supabase
               .from('messages')
               .update({ is_read: true })
