@@ -17,19 +17,24 @@ async function currentUserId(): Promise<string | null> {
 
 /**
  * 当前用户与 otherUserId 是否存在黑名单关系（任一方向存在即生效）。
+ *
+ * 注意：必须调用 SECURITY DEFINER 函数 public.is_blocked(a,b)（RPC），
+ * 不能直接查 blocked_users —— 该表 RLS 只允许看到"自己拉黑了谁"
+ * （blocker_id = auth.uid()），被拉黑方直接查会查不到记录而返回 false，
+ * 导致双方看到的效果不对称（拉黑方锁定、被拉黑方不锁）。
  */
 export async function isBlockedWith(otherUserId: string): Promise<boolean> {
   const uid = await currentUserId();
   if (!uid) return false;
-  const { data, error } = await supabase
-    .from('blocked_users')
-    .select('blocker_id')
-    .or(
-      `and(blocker_id.eq.${uid},blocked_id.eq.${otherUserId}),` +
-      `and(blocker_id.eq.${otherUserId},blocked_id.eq.${uid})`
-    );
-  if (error) return false;
-  return (data?.length ?? 0) > 0;
+  const { data, error } = await supabase.rpc('is_blocked', {
+    a: uid,
+    b: otherUserId,
+  });
+  if (error) {
+    console.error('is_blocked rpc failed:', error);
+    return false;
+  }
+  return data === true;
 }
 
 /**
