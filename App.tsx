@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar, AppState } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Home, User as UserIcon } from 'lucide-react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -74,6 +74,40 @@ const AppNavigator: React.FC = () => {
     } catch (err) {
       console.error('Error fetching unread total:', err);
     }
+  }, [user]);
+
+  // 在线心跳：app 在前台时每 60s 更新 profiles.last_seen（聊天室在线状态依据）；
+  // 退到后台暂停，回到前台立即报活。
+  useEffect(() => {
+    if (!user) return;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const beat = async () => {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ last_seen: new Date().toISOString() })
+          .eq('id', user.id);
+        if (error) console.warn('heartbeat failed:', error.message);
+      } catch (e) {
+        console.warn('heartbeat error:', String(e));
+      }
+    };
+    const handleAppState = (state: string) => {
+      if (state === 'active') {
+        beat();
+        if (!timer) timer = setInterval(beat, 60000);
+      } else if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppState);
+    beat();
+    timer = setInterval(beat, 60000);
+    return () => {
+      sub.remove();
+      if (timer) clearInterval(timer);
+    };
   }, [user]);
 
   // Global unread badge + new-message notifications

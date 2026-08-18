@@ -79,6 +79,7 @@
     "send": "Send",
     "connecting": "Establishing channel...",
     "online": "Online",
+    "offline": "Offline",
     "offline": "Connection lost (reconnecting)",
     "unread": "Unread",
     "read": "Read",

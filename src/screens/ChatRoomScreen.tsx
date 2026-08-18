@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,30 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+
+  // 对方在线状态：last_seen 距今 < 2 分钟判定在线（心跳每 60s 一次）
+  const [partnerOnline, setPartnerOnline] = useState(true);
+  const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+  const fetchPartnerPresence = useCallback(async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('last_seen')
+      .eq('id', recipientId)
+      .maybeSingle();
+    if (data?.last_seen) {
+      setPartnerOnline(Date.now() - new Date(data.last_seen).getTime() < ONLINE_WINDOW_MS);
+    } else {
+      setPartnerOnline(false);
+    }
+  }, [recipientId]);
+
+  // 进入时查询 + 每 30s 刷新
+  useEffect(() => {
+    fetchPartnerPresence();
+    const timer = setInterval(fetchPartnerPresence, 30000);
+    return () => clearInterval(timer);
+  }, [fetchPartnerPresence]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState<string>('');
@@ -211,7 +235,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
               </TouchableOpacity>
             )}
           </View>
-          <Text style={styles.onlineBadge}>● {t('chat.online')}</Text>
+          <Text style={[styles.onlineBadge, !partnerOnline && styles.offlineBadge]}>
+            ● {partnerOnline ? t('chat.online') : t('chat.offline')}
+          </Text>
         </View>
 
         <View style={{ width: 32 }} />
@@ -354,6 +380,9 @@ const styles = StyleSheet.create({
     color: theme.colors.success,
     fontSize: 11,
     fontWeight: '600',
+  },
+  offlineBadge: {
+    color: theme.colors.textFaint,
   },
   centered: {
     flex: 1,
