@@ -10,9 +10,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, User, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck } from 'lucide-react-native';
+import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { GenderAvatar } from '../components/GenderAvatar';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
 import { theme } from '../theme';
@@ -85,7 +86,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
         {/* User Info Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarLarge}>
-            <User size={36} color={theme.colors.primary} />
+            <GenderAvatar gender={profile?.gender} size={36} />
           </View>
 
           <Text style={styles.username}>{profile?.username || 'Professional User'}</Text>

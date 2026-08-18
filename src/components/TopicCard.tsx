@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Clock, User, UserMinus, UserCheck } from 'lucide-react-native';
+import { MessageSquare, Clock, UserMinus, UserCheck } from 'lucide-react-native';
 import { Topic, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from './ProfessionBadge';
+import { GenderAvatar } from './GenderAvatar';
 import { theme } from '../theme';
 import { blockUser, unblockUser, isBlockedByMe } from '../lib/blocklist';
 
@@ -88,7 +89,7 @@ export const TopicCard: React.FC<TopicCardProps> = ({
       <View style={styles.header}>
         <View style={styles.userInfoRow}>
           <View style={styles.avatar}>
-            <User size={18} color={theme.colors.textMuted} />
+            <GenderAvatar gender={topic.profiles?.gender} size={18} />
           </View>
           <View style={styles.nameBlock}>
             <View style={styles.nameRow}>

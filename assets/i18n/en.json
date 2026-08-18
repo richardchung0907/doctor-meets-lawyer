@@ -45,6 +45,7 @@
     "login_success": "Login successful",
     "signup_success": "Signup successful! Logged in.",
     "err_invalid": "Please fill in all required fields",
+  "err_gender_required": "Please select your gender",
     "err_auth_failed": "Authentication failed. Please check your credentials."
   },
   "feed": {

@@ -15,6 +15,7 @@ import { ArrowLeft, Mail, Lock, User, FileText, ChevronRight } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { ProfessionKey, PROFESSION_KEYS, PROFESSION_COLORS } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 
 interface AuthScreenProps {
@@ -40,7 +41,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [profession, setProfession] = useState<ProfessionKey>(
     initialProfession || 'medical_doctor'
   );
-  const [gender, setGender] = useState('other');
+  // 性别必选（男/女），注册时强制提供
+  const [gender, setGender] = useState<string | null>(null);
   const [age, setAge] = useState('');
   const [bio, setBio] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,6 +58,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     if (mode === 'signup') {
       if (!username) {
         setErrorMessage(t('auth.err_invalid'));
+        return;
+      }
+      if (!gender) {
+        setErrorMessage(t('auth.err_gender_required'));
         return;
       }
       const parsedAge = age ? parseInt(age, 10) : undefined;
@@ -185,6 +191,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     );
                   })}
                 </ScrollView>
+              </View>
+
+              {/* Gender (required) — 决定头像显示 */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t('auth.gender')} *</Text>
+                <View style={styles.genderRow}>
+                  <TouchableOpacity
+                    style={[styles.genderPill, gender === 'male' && styles.genderPillActiveMale]}
+                    onPress={() => setGender('male')}
+                    activeOpacity={0.8}
+                  >
+                    <GenderAvatar gender="male" size={18} />
+                    <Text style={[styles.genderPillText, gender === 'male' && styles.genderPillTextActive]}>
+                      {t('auth.gender_male')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.genderPill, gender === 'female' && styles.genderPillActiveFemale]}
+                    onPress={() => setGender('female')}
+                    activeOpacity={0.8}
+                  >
+                    <GenderAvatar gender="female" size={18} />
+                    <Text style={[styles.genderPillText, gender === 'female' && styles.genderPillTextActive]}>
+                      {t('auth.gender_female')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </>
           )}
@@ -390,6 +423,39 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  genderPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderColor: theme.colors.border,
+  },
+  genderPillActiveMale: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  genderPillActiveFemale: {
+    backgroundColor: '#EC4899',
+    borderColor: '#EC4899',
+  },
+  genderPillText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  genderPillTextActive: {
+    color: theme.colors.white,
+    fontWeight: '800',
   },
   submitBtn: {
     flexDirection: 'row',

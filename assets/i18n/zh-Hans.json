@@ -45,6 +45,7 @@
     "login_success": "登录成功",
     "signup_success": "注册成功！已自动登录",
     "err_invalid": "请填写所有必填字段",
+  "err_gender_required": "请选择性别",
     "err_auth_failed": "认证失败，请检查邮箱及密码"
   },
   "feed": {

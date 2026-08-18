@@ -22,6 +22,7 @@ import { TopicCard } from '../components/TopicCard';
 import { ProfessionMultiFilter } from '../components/ProfessionMultiFilter';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { LanguageSelector } from '../components/LanguageSelector';
+import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 
 interface FeedScreenProps {
@@ -63,6 +64,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
             id,
             username,
             profession,
+            gender,
             avatar_url
           )
         `)
@@ -225,9 +227,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
         <View style={styles.rightHeaderRow}>
           <LanguageSelector />
           <TouchableOpacity style={styles.profileAvatarBtn} onPress={onOpenProfile} activeOpacity={0.8}>
-            <Text style={styles.avatarInitial}>
-              {profile?.username ? profile.username.substring(0, 1).toUpperCase() : 'U'}
-            </Text>
+            <GenderAvatar gender={profile?.gender} size={20} />
           </TouchableOpacity>
         </View>
       </View>
@@ -372,7 +372,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
