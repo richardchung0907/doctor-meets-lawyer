@@ -94,9 +94,10 @@ export const TopicCard: React.FC<TopicCardProps> = ({
           <View style={styles.nameBlock}>
             <View style={styles.nameRow}>
               <TouchableOpacity
-                onPress={() => onPressAuthor(topic.user_id)}
-                activeOpacity={0.7}
+                onPress={isOwnTopic ? undefined : () => onPressAuthor(topic.user_id)}
+                activeOpacity={isOwnTopic ? 1 : 0.7}
                 style={styles.nameLink}
+                disabled={!!isOwnTopic}
               >
                 <Text style={styles.username} numberOfLines={1}>
                   {authorName}

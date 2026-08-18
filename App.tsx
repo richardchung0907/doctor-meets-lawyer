@@ -32,6 +32,13 @@ const AppNavigator: React.FC = () => {
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [totalUnread, setTotalUnread] = useState(0);
 
+  // 查看他人资料：不允许查看自己（防止从话题大厅自己的名字进入含拉黑按钮的资料页）
+  const handleViewUserProfile = useCallback((userId: string) => {
+    if (user && userId !== user.id) {
+      setViewingProfileId(userId);
+    }
+  }, [user]);
+
   // refs to avoid re-subscribing the realtime channel on every screen change
   const activeChatRef = useRef(activeChat);
   const activeScreenRef = useRef(activeScreen);
@@ -194,7 +201,7 @@ const AppNavigator: React.FC = () => {
         conversationId={activeChat.id}
         recipientName={activeChat.recipientName}
         recipientId={activeChat.recipientId}
-        onPressRecipient={() => setViewingProfileId(activeChat.recipientId)}
+        onPressRecipient={() => handleViewUserProfile(activeChat.recipientId)}
         onBack={() => {
           setActiveChat(null);
           setActiveScreen('main');
@@ -216,7 +223,7 @@ const AppNavigator: React.FC = () => {
               setActiveScreen('chat');
             }}
             onOpenProfile={() => setCurrentTab('profile')}
-            onViewUserProfile={(userId) => setViewingProfileId(userId)}
+            onViewUserProfile={handleViewUserProfile}
           />
         )}
 
@@ -226,7 +233,7 @@ const AppNavigator: React.FC = () => {
               setActiveChat({ id: convId, recipientName: name, recipientId: partnerId });
               setActiveScreen('chat');
             }}
-            onViewUserProfile={(userId) => setViewingProfileId(userId)}
+            onViewUserProfile={handleViewUserProfile}
           />
         )}
 
