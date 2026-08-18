@@ -17,6 +17,7 @@ import { Plus, MessageSquarePlus, RefreshCw, X, Send } from 'lucide-react-native
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Topic, ProfessionKey } from '../types/database';
+import { truncateByWidth, textWidth, exceedsWidthLimit, TOPIC_MAX_UNITS } from '../lib/textLimit';
 import { TopicCard } from '../components/TopicCard';
 import { ProfessionMultiFilter } from '../components/ProfessionMultiFilter';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
@@ -131,7 +132,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
   });
 
   const handlePostTopic = async () => {
-    if (!newTopicContent.trim() || !user) return;
+    if (!user) return;
+    const trimmed = newTopicContent.trim();
+    // 防御：输入框已限制，提交前再兜底一次（30 全角 / 60 半角 / 混合按宽度）
+    if (!trimmed || exceedsWidthLimit(trimmed, TOPIC_MAX_UNITS)) return;
 
     try {
       // 发布前校验：每名用户在 24 小时窗口内最多 3 个话题可出现在 Topic Hall。
@@ -301,9 +305,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
               placeholder={t('feed.topic_placeholder')}
               placeholderTextColor={theme.colors.textFaint}
               multiline
+              maxLength={TOPIC_MAX_UNITS * 2}
               value={newTopicContent}
-              onChangeText={setNewTopicContent}
+              onChangeText={(t) => setNewTopicContent(truncateByWidth(t, TOPIC_MAX_UNITS))}
             />
+
+            <Text style={styles.limitHint}>
+              {textWidth(newTopicContent)} / {TOPIC_MAX_UNITS}（30 全角 / 60 半角）
+            </Text>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
@@ -475,5 +484,10 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: 14,
     fontWeight: '700',
+  },
+  limitHint: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    textAlign: 'right',
   },
 });
