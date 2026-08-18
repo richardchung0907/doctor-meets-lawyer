@@ -79,6 +79,7 @@
     "send": "发送",
     "connecting": "实时通道建立中...",
     "online": "在线连接",
+    "offline": "离线",
     "offline": "连接中断（尝试重连）",
     "unread": "未读",
     "read": "已读",
