@@ -14,6 +14,7 @@ import { ArrowLeft, User, Calendar, UserMinus, UserCheck } from 'lucide-react-na
 import { supabase } from '../lib/supabase';
 import { Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 import { isBlockedWith, isBlockedByMe, blockUser, unblockUser } from '../lib/blocklist';
 
@@ -134,9 +135,7 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
           {/* Public Info Card */}
           <View style={styles.userCard}>
             <View style={styles.avatarLarge}>
-              <Text style={styles.avatarInitial}>
-                {profile.username ? profile.username.substring(0, 1).toUpperCase() : '?'}
-              </Text>
+              <GenderAvatar gender={profile.gender} size={48} />
             </View>
 
             <Text style={styles.username}>{profile.username || 'Professional User'}</Text>

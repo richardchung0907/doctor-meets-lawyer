@@ -11,11 +11,12 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, User, ChevronRight, UserMinus, UserCheck } from 'lucide-react-native';
+import { MessageSquare, ChevronRight, UserMinus, UserCheck } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Conversation, Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 import { blockUser, unblockUser } from '../lib/blocklist';
 
@@ -51,8 +52,8 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
         .from('conversations')
         .select(`
           *,
-          participant1:participant1_id (id, username, profession, avatar_url),
-          participant2:participant2_id (id, username, profession, avatar_url)
+          participant1:participant1_id (id, username, profession, gender, avatar_url),
+          participant2:participant2_id (id, username, profession, gender, avatar_url)
         `)
         .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
         .order('updated_at', { ascending: false });
@@ -179,7 +180,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
                 activeOpacity={0.7}
               >
                 <View style={styles.avatar}>
-                  <User size={20} color={theme.colors.textMuted} />
+                  <GenderAvatar gender={partner?.gender} size={20} />
                 </View>
 
                 <View style={styles.convDetails}>
