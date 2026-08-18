@@ -8,10 +8,13 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck } from 'lucide-react-native';
+import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { GenderAvatar } from '../components/GenderAvatar';
 import { LanguageSelector } from '../components/LanguageSelector';
@@ -26,12 +29,16 @@ interface ProfileScreenProps {
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOut }) => {
   const { t, i18n } = useTranslation();
-  const { profile, user, signOut, isLoading } = useAuth();
+  const { profile, user, signOut, isLoading, refreshProfile } = useAuth();
 
   const [confirmLogoutModal, setConfirmLogoutModal] = useState(false);
   const [blocklistModal, setBlocklistModal] = useState(false);
   const [blocklist, setBlocklist] = useState<BlockedEntry[]>([]);
   const [blocklistLoading, setBlocklistLoading] = useState(false);
+  // 编辑个人简介
+  const [bioModalVisible, setBioModalVisible] = useState(false);
+  const [bioDraft, setBioDraft] = useState('');
+  const [bioSaving, setBioSaving] = useState(false);
 
   const handleLogout = async () => {
     setConfirmLogoutModal(false);
@@ -63,6 +70,28 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
     if (ok) {
       setBlocklist((prev) => prev.filter((e) => e.blocked_id !== blockedId));
     }
+  };
+
+  // ---- 编辑个人简介 ----
+  const openBioModal = () => {
+    setBioDraft(profile?.bio ?? '');
+    setBioModalVisible(true);
+  };
+
+  const saveBio = async () => {
+    if (!user) return;
+    setBioSaving(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ bio: bioDraft.trim() })
+      .eq('id', user.id);
+    setBioSaving(false);
+    if (error) {
+      Alert.alert(t('profile.title'), error.message);
+      return;
+    }
+    setBioModalVisible(false);
+    await refreshProfile();
   };
 
   // 挂载时即加载黑名单，保证入口处的数量始终正确
@@ -104,7 +133,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
             <View style={styles.bioBox}>
               <Text style={styles.bioText}>{profile.bio}</Text>
             </View>
-          ) : null}
+          ) : (
+            <Text style={styles.noBioText}>{t('profile.bio_placeholder')}</Text>
+          )}
+
+          {/* 编辑简介入口 */}
+          <TouchableOpacity style={styles.editBioBtn} onPress={openBioModal} activeOpacity={0.7}>
+            <Pencil size={13} color={theme.colors.primaryDark} />
+            <Text style={styles.editBioBtnText}>{t('profile.edit_bio')}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Settings List */}
@@ -224,6 +261,50 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Edit Bio Modal */}
+      <Modal
+        visible={bioModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBioModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.bioModalCard}>
+            <Text style={styles.modalTitle}>{t('profile.edit_bio')}</Text>
+            <TextInput
+              style={styles.bioInput}
+              placeholder={t('profile.bio_placeholder')}
+              placeholderTextColor={theme.colors.textFaint}
+              multiline
+              maxLength={500}
+              value={bioDraft}
+              onChangeText={setBioDraft}
+            />
+            <View style={styles.bioModalActions}>
+              <TouchableOpacity
+                style={styles.bioCancelBtn}
+                onPress={() => setBioModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bioCancelText}>{t('feed.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.bioSaveBtn}
+                onPress={saveBio}
+                disabled={bioSaving}
+                activeOpacity={0.8}
+              >
+                {bioSaving ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <Text style={styles.bioSaveText}>{t('profile.save_bio')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -301,6 +382,77 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  noBioText: {
+    color: theme.colors.textFaint,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  editBioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginTop: 6,
+  },
+  editBioBtnText: {
+    color: theme.colors.primaryDark,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bioModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 20,
+    gap: 12,
+  },
+  bioInput: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
+    padding: 12,
+    minHeight: 110,
+    textAlignVertical: 'top',
+    fontSize: 14,
+  },
+  bioModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  bioCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  bioCancelText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bioSaveBtn: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  bioSaveText: {
+    color: theme.colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
   sectionCard: {
     backgroundColor: theme.colors.surface,
