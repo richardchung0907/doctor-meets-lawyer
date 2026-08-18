@@ -20,7 +20,7 @@ import { Topic, ProfessionKey } from '../types/database';
 import { truncateByWidth, textWidth, exceedsWidthLimit, TOPIC_MAX_UNITS } from '../lib/textLimit';
 import { TopicCard } from '../components/TopicCard';
 import { ProfessionMultiFilter } from '../components/ProfessionMultiFilter';
-import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
+import { RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
@@ -232,9 +232,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
         </View>
       </View>
 
-      <ConnectionStatusBanner status={realtimeStatus} />
-
-      {/* Multi-Select Profession Filter */}
       <ProfessionMultiFilter
         selectedProfessions={selectedProfessions}
         onToggleProfession={handleToggleProfessionFilter}
