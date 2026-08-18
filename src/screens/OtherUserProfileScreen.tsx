@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, User, Calendar, UserMinus, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, User, Calendar, UserMinus, UserCheck } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
@@ -80,22 +80,15 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
     ]);
   };
 
-  const handleUnblock = () => {
-    Alert.alert(t('profile.unblocked_confirm_title'), t('profile.unblocked_confirm_message'), [
-      { text: t('feed.cancel'), style: 'cancel' },
-      {
-        text: t('profile.unblock_user'),
-        onPress: async () => {
-          const ok = await unblockUser(userId);
-          if (ok) {
-            // 仅当双方都不再拉黑时，黑名单效力才取消
-            const stillBlocked = await isBlockedWith(userId);
-            setBlocked(stillBlocked);
-            setBlockedByMe(false);
-          }
-        },
-      },
-    ]);
+  // 解封：低风险可逆操作，直接执行，不弹确认（与名字旁/黑名单列表一致）
+  const handleUnblock = async () => {
+    const ok = await unblockUser(userId);
+    if (ok) {
+      // 仅当双方都不再拉黑时，黑名单效力才取消
+      const stillBlocked = await isBlockedWith(userId);
+      setBlocked(stillBlocked);
+      setBlockedByMe(false);
+    }
   };
 
   const joinDate = profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '';
@@ -131,7 +124,7 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
           <Text style={styles.blockedText}>{t('profile.profile_unavailable')}</Text>
           {blockedByMe && (
             <TouchableOpacity style={styles.unblockBtn} onPress={handleUnblock} activeOpacity={0.8}>
-              <UserPlus size={16} color={theme.colors.danger} />
+              <UserCheck size={16} color={theme.colors.success} />
               <Text style={styles.unblockBtnText}>{t('profile.unblock_user')}</Text>
             </TouchableOpacity>
           )}
@@ -227,15 +220,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
   unblockBtnText: {
-    color: theme.colors.danger,
+    color: theme.colors.success,
     fontSize: 14,
     fontWeight: '700',
   },

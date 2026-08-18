@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, User, LogOut, Globe, Mail, Shield, Check, UserX } from 'lucide-react-native';
+import { ArrowLeft, User, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { ProfessionBadge } from '../components/ProfessionBadge';
 import { LanguageSelector } from '../components/LanguageSelector';
@@ -208,6 +208,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
                         onPress={() => handleRemoveFromBlocklist(entry.blocked_id)}
                         activeOpacity={0.8}
                       >
+                        <UserCheck size={14} color={theme.colors.success} />
                         <Text style={styles.removeBtnText}>{t('profile.unblock_user')}</Text>
                       </TouchableOpacity>
                     </View>
@@ -461,13 +462,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   removeBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   removeBtnText: {
-    color: theme.colors.danger,
+    color: theme.colors.success,
     fontSize: 12,
     fontWeight: '700',
   },
