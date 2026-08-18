@@ -18,7 +18,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
 import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
-import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
+import { RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { theme } from '../theme';
 import { isBlockedWith, blockUser } from '../lib/blocklist';
 
@@ -45,11 +45,13 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   const ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
   const fetchPartnerPresence = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('last_seen')
       .eq('id', recipientId)
       .maybeSingle();
+    // 查询失败保持当前状态，避免网络抖动误判离线
+    if (error) return;
     if (data?.last_seen) {
       setPartnerOnline(Date.now() - new Date(data.last_seen).getTime() < ONLINE_WINDOW_MS);
     } else {
@@ -242,8 +244,6 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
 
         <View style={{ width: 32 }} />
       </View>
-
-      <ConnectionStatusBanner status={realtimeStatus} />
 
       {blocked && (
         <View style={styles.blockedBanner}>
