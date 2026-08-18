@@ -10,6 +10,9 @@ scripts/ci_emulator_runner.py
 scripts/apply_migration.js
 scripts/mount_emulator.py
 
+# Bot simulation controller (local machine only — never commit)
+scripts/sim/
+
 # Dependencies
 node_modules/
 .pnpm-store/
