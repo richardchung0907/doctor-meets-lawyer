@@ -80,7 +80,6 @@
     "connecting": "实时通道建立中...",
     "online": "在线上",
     "offline": "离线",
-    "offline": "连接中断（尝试重连）",
     "unread": "未读",
     "read": "已读",
     "load_more": "加载更多消息",

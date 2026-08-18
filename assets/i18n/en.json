@@ -80,7 +80,6 @@
     "connecting": "Establishing channel...",
     "online": "online",
     "offline": "offline",
-    "offline": "Connection lost (reconnecting)",
     "unread": "Unread",
     "read": "Read",
     "load_more": "Load earlier messages",
