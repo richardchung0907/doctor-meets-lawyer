@@ -17,6 +17,7 @@ import { ArrowLeft, Send, Check, CheckCheck, UserMinus } from 'lucide-react-nati
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
+import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
 import { ConnectionStatusBanner, RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { theme } from '../theme';
 import { isBlockedWith, blockUser } from '../lib/blocklist';
@@ -129,9 +130,11 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   }, [recipientId]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || !user || sending) return;
+    const trimmed = inputText.trim();
+    // 防御：输入框已限制，提交前再兜底一次（100 全角 / 半角按宽度）
+    if (!trimmed || !user || sending || exceedsWidthLimit(trimmed, MESSAGE_MAX_UNITS)) return;
 
-    const messageContent = inputText.trim();
+    const messageContent = trimmed;
     setInputText('');
 
     try {
@@ -283,8 +286,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
             placeholder={blocked ? t('chat.blocked_hint') : t('chat.input_placeholder')}
             placeholderTextColor={theme.colors.textFaint}
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={(t) => setInputText(truncateByWidth(t, MESSAGE_MAX_UNITS))}
             multiline
+            maxLength={MESSAGE_MAX_UNITS * 2}
             editable={!blocked}
           />
 

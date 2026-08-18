@@ -99,8 +99,10 @@ export const TopicCard: React.FC<TopicCardProps> = ({
         <ProfessionBadge profession={authorProfession} size="small" />
       </View>
 
-      {/* Content */}
-      <Text style={styles.content}>{topic.content}</Text>
+      {/* Content — 话题大厅强制最多 2 行，超出的在行末以 '...' 隐藏（自适应屏宽） */}
+      <Text style={styles.content} numberOfLines={2} ellipsizeMode="tail">
+        {topic.content}
+      </Text>
 
       {/* Actions */}
       <View style={styles.footer}>
