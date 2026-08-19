@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react-native';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
@@ -46,22 +46,29 @@ export const LanguageSelector: React.FC = () => {
         >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('profile.language_setting')}</Text>
-            {languages.map((lang) => {
-              const isSelected = i18n.language === lang.key;
-              return (
-                <TouchableOpacity
-                  key={lang.key}
-                  style={[styles.langOption, isSelected && styles.langOptionSelected]}
-                  onPress={() => handleSelectLanguage(lang.key)}
-                >
-                  <Text style={styles.flagText}>{lang.flag}</Text>
-                  <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>
-                    {lang.label}
-                  </Text>
-                  {isSelected && <Check size={18} color={theme.colors.primary} />}
-                </TouchableOpacity>
-              );
-            })}
+            <ScrollView
+              style={styles.langList}
+              contentContainerStyle={styles.langListContent}
+              bounces={false}
+              showsVerticalScrollIndicator={true}
+            >
+              {languages.map((lang) => {
+                const isSelected = i18n.language === lang.key;
+                return (
+                  <TouchableOpacity
+                    key={lang.key}
+                    style={[styles.langOption, isSelected && styles.langOptionSelected]}
+                    onPress={() => handleSelectLanguage(lang.key)}
+                  >
+                    <Text style={styles.flagText}>{lang.flag}</Text>
+                    <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>
+                      {lang.label}
+                    </Text>
+                    {isSelected && <Check size={18} color={theme.colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -96,11 +103,17 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 360,
+    maxHeight: '90%',
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 20,
+  },
+  langList: {
+    flexGrow: 0,
+  },
+  langListContent: {
     gap: 12,
   },
   modalTitle: {
