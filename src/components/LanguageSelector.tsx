@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react-native';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
@@ -8,6 +8,12 @@ import { theme } from '../theme';
 export const LanguageSelector: React.FC = () => {
   const { i18n, t } = useTranslation();
   const [modalVisible, setModalVisible] = useState(false);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  // 自适应屏幕：弹窗最大尺寸按窗口尺寸计算（数值 dp），避免依赖百分比测量。
+  // overlay 左右各 padding 20，故宽度上限为 windowWidth - 40，同时保持设计上限 360。
+  const modalMaxWidth = Math.min(windowWidth - 40, 360);
+  const modalMaxHeight = windowHeight * 0.9;
 
   const languages: { key: SupportedLanguage; label: string; flag: string }[] = [
     { key: 'zh-Hant', label: '繁體中文 (Traditional Chinese)', flag: '🇭🇰' },
@@ -44,14 +50,14 @@ export const LanguageSelector: React.FC = () => {
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { maxWidth: modalMaxWidth, maxHeight: modalMaxHeight }]}>
             <Text style={styles.modalTitle}>{t('profile.language_setting')}</Text>
-            <ScrollView
-              style={styles.langList}
-              contentContainerStyle={styles.langListContent}
-              bounces={false}
-              showsVerticalScrollIndicator={true}
-            >
+            {/* 注意：这里刻意不用 ScrollView。语言项固定 3 个、总高很小，无需滚动；
+                且 RN 0.76 旧架构在 Android 上存在 Modal 内 ScrollView 首次打开时
+                高度计算异常的回归（react-native#48822），实机（Galaxy A5 / Android 8.0）
+                表现为只有标题可见、选项区不可见。将来若语言增多需要滚动，
+                请先确认该回归已修复，或改用显式高度。 */}
+            <View style={styles.langList}>
               {languages.map((lang) => {
                 const isSelected = i18n.language === lang.key;
                 return (
@@ -68,7 +74,7 @@ export const LanguageSelector: React.FC = () => {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -102,8 +108,6 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '100%',
-    maxWidth: 360,
-    maxHeight: '90%',
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
@@ -111,9 +115,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   langList: {
-    flexGrow: 0,
-  },
-  langListContent: {
     gap: 12,
   },
   modalTitle: {
