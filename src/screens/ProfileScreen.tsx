@@ -35,6 +35,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
   const [blocklistModal, setBlocklistModal] = useState(false);
   const [blocklist, setBlocklist] = useState<BlockedEntry[]>([]);
   const [blocklistLoading, setBlocklistLoading] = useState(false);
+  // ScrollView 是否已挂载（延迟到 Modal 打开后的下一渲染周期，见下方 useEffect 说明）
+  const [blocklistRendered, setBlocklistRendered] = useState(false);
   // 编辑个人简介
   const [bioModalVisible, setBioModalVisible] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
@@ -62,6 +64,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
 
   const openBlocklist = async () => {
     setBlocklistModal(true);
+    setBlocklistRendered(false);
     await loadBlocklist();
   };
 
@@ -99,6 +102,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
     loadBlocklist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // RN 0.76 旧架构 Android 回归（react-native#48822）：Modal 与 ScrollView 在同一
+  // 渲染批次挂载时，ScrollView 高度测量异常（实机表现：列表内容不可见/不可滚）。
+  // 把 ScrollView 的挂载推迟到 Modal 打开后的下一渲染周期，规避该回归；
+  // 50ms 保证覆盖旧设备的低帧率场景，且用户无感。
+  useEffect(() => {
+    if (!blocklistModal) return;
+    const timer = setTimeout(() => setBlocklistRendered(true), 50);
+    return () => clearTimeout(timer);
+  }, [blocklistModal]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -227,7 +240,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
                 <UserX size={28} color={theme.colors.textFaint} />
                 <Text style={styles.blocklistEmpty}>{t('profile.blocklist_empty')}</Text>
               </View>
-            ) : (
+            ) : blocklistRendered ? (
               <ScrollView style={styles.blocklistScroll}>
                 {blocklist.map((entry) => {
                   const name = entry.blocked_user?.[0]?.username || 'Professional User';
@@ -253,6 +266,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
                   );
                 })}
               </ScrollView>
+            ) : (
+              // 延迟挂载生效前的占位，保持分支结构稳定，避免布局跳动
+              <View style={styles.blocklistScroll} />
             )}
 
             <TouchableOpacity style={styles.blocklistClose} onPress={() => setBlocklistModal(false)}>
