@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
+      "backgroundColor": "#FFF3F9"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -21,7 +21,7 @@
       "package": "com.richardchung.doctormeetslawyer",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F172A"
+        "backgroundColor": "#DEF2FF"
       }
     },
     "web": {
