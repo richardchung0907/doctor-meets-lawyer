@@ -10,6 +10,16 @@ scripts/ci_emulator_runner.py
 scripts/apply_migration.js
 scripts/mount_emulator.py
 
+# iOS signing & App Store release assets (sensitive, local-only)
+ios-signing/
+docs/appstore/
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+ios_distribution.key
+distribution.pem
+
 # Bot simulation controller (local machine only — never commit)
 scripts/sim/
 
@@ -26,8 +36,8 @@ web-build/
 *.zip
 
 # Native Directories generated dynamically
-android/
-ios/
+/android/
+/ios/
 
 # Logs & Temporary Files
 *.log
