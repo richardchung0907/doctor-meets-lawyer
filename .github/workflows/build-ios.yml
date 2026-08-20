@@ -1,0 +1,139 @@
+name: Build iOS App
+
+# iOS 构建 + 上传 TestFlight（App Store Connect API 认证）
+# 触发：推 tag `v*-ios`（例：v1.0.0-ios），或手动 workflow_dispatch
+# 首次运行前必须先把 secrets 配好（见 skills/doctor-meets-lawyer-ios-release/SKILL.md）：
+#   IOS_BUILD_CERTIFICATE_BASE64 / IOS_BUILD_CERTIFICATE_PASSWORD
+#   IOS_PROVISIONING_PROFILE_BASE64 / IOS_PROVISIONING_PROFILE_NAME
+#   KEYCHAIN_PASSWORD
+#   APPSTORE_ISSUER_ID / APPSTORE_KEY_ID / APPSTORE_PRIVATE_KEY
+# 用 scripts/appstore/setup_github_secrets.py 从本机 keys.txt / ios-signing/ 自动上传。
+
+on:
+  push:
+    tags:
+      - 'v*-ios'
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Compile iOS IPA & Upload to TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run Expo Prebuild (generate iOS native project)
+        env:
+          CI: 1
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+
+      - name: Discover workspace & scheme
+        id: discover
+        run: |
+          WORKSPACE=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "Using workspace: $WORKSPACE"
+          echo "Using scheme: $SCHEME"
+
+      - name: Setup signing certificates & provisioning profile
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_BUILD_CERTIFICATE_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # 从 secrets 还原证书与描述文件
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # 创建临时 keychain 并导入分发证书
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          security import $CERTIFICATE_PATH -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+
+          # 避免 codesign 交互式提示
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
+
+          # 安装 provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Prepare ExportOptions.plist
+        run: |
+          cp .github/ios/ExportOptions.plist ios/ExportOptions.plist
+          plutil -replace provisioningProfiles -xml "<dict><key>com.richardchung.doctormeetslawyer</key><string>${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}</string></dict>" ios/ExportOptions.plist
+
+      - name: Archive iOS app
+        run: |
+          cd ios
+          xcodebuild -workspace "${{ steps.discover.outputs.workspace }}" \
+            -scheme "${{ steps.discover.outputs.scheme }}" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM=3W8574PF9N \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}" \
+            archive
+
+      - name: Export IPA
+        run: |
+          cd ios
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist ios/ExportOptions.plist
+
+      - name: Locate IPA file
+        run: |
+          IPA_PATH=$(find "$RUNNER_TEMP/export" -name '*.ipa' -print -quit)
+          echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
+          echo "Found IPA at: $IPA_PATH"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa-release
+          path: ${{ env.IPA_PATH }}
+          if-no-files-found: error
+
+      - name: Upload to TestFlight
+        if: ${{ env.IPA_PATH != '' && env.APPSTORE_ISSUER_ID != '' && env.APPSTORE_KEY_ID != '' && env.APPSTORE_PRIVATE_KEY != '' }}
+        env:
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        uses: Apple-Actions/upload-testflight-build@v1
+        with:
+          app-path: ${{ env.IPA_PATH }}
+          issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
