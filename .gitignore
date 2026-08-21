@@ -13,6 +13,7 @@ scripts/mount_emulator.py
 # iOS signing & App Store release assets (sensitive, local-only)
 ios-signing/
 docs/appstore/
+docs/revenuecat/
 *.p8
 *.p12
 *.mobileprovision
@@ -34,6 +35,8 @@ web-build/
 *.apk
 *.aab
 *.zip
+build_downloads/
+scripts/appstore/_openapi/
 
 # Native Directories generated dynamically
 /android/

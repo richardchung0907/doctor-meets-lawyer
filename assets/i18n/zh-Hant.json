@@ -45,7 +45,7 @@
     "login_success": "登入成功",
     "signup_success": "註冊成功！已自動登入",
     "err_invalid": "請填寫所有必填欄位",
-  "err_gender_required": "請選擇性別",
+    "err_gender_required": "請選擇性別",
     "err_auth_failed": "認證失敗，請檢查電郵及密碼"
   },
   "feed": {
@@ -112,5 +112,29 @@
     "feed": "話題大廳",
     "messages": "私訊",
     "profile": "個人中心"
+  },
+  "premium": {
+    "title": "高級會員",
+    "hero_title": "升級為高級會員",
+    "early_badge": "早鳥升級 · 新權限即將開啟",
+    "benefit_identity": "專屬高級會員身份標識，彰顯你在專業社群中的地位。",
+    "benefit_future": "新權限將陸續開放，早鳥以優惠價搶先鎖定。",
+    "price_period": "僅限年費",
+    "price_note": "早鳥優惠價，新權限上線後恢復標準價格。",
+    "price_placeholder": "請使用正式版查看價格",
+    "year_unit": "年",
+    "upgrade": "立即升級",
+    "restore": "恢復購買",
+    "already": "您已是高級會員",
+    "member_label": "高級會員",
+    "member_lifetime": "感謝你的支持",
+    "expires_at": "有效期至 {{date}}",
+    "cta_title": "升級為高級會員",
+    "cta_sub": "早鳥優惠 · 新權限即將開啟",
+    "sdk_unavailable": "目前環境不支援購買，請使用正式安裝版。",
+    "upgrade_success_title": "升級成功",
+    "upgrade_success_message": "歡迎加入高級會員！",
+    "restore_success_title": "恢復成功",
+    "restore_success_message": "已恢復高級會員身份。"
   }
 }

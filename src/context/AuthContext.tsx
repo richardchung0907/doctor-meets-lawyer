@@ -2,11 +2,17 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Profile, ProfessionKey } from '../types/database';
+import {
+  addPremiumListener,
+  fetchPremiumStatus,
+  syncPurchasesIdentity,
+} from '../lib/purchases';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isPremium: boolean;
   isLoading: boolean;
   selectedOnboardingProfession: ProfessionKey | null;
   setSelectedOnboardingProfession: (prof: ProfessionKey | null) => void;
@@ -22,6 +28,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshPremiumStatus: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedOnboardingProfession, setSelectedOnboardingProfession] = useState<ProfessionKey | null>(null);
 
@@ -42,7 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (!error && data) {
-        setProfile(data as Profile);
+        const p = data as Profile;
+        setProfile(p);
+        // 权威来源（rc-webhook 落库）；到期时间已过则视为非会员
+        const stillValid =
+          !!p.is_premium &&
+          (!p.premium_expires_at || new Date(p.premium_expires_at).getTime() > Date.now());
+        setIsPremium(stillValid);
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
@@ -78,10 +92,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // 3. 购买身份同步：登录 → logIn(supabaseUid)，登出 → logOut
+  useEffect(() => {
+    if (isLoading) return;
+    const userId = session?.user?.id ?? null;
+
+    if (userId) {
+      syncPurchasesIdentity(userId);
+      fetchPremiumStatus().then((ok) => {
+        if (ok) setIsPremium(true);
+      });
+    } else {
+      syncPurchasesIdentity(null);
+      setIsPremium(false);
+    }
+  }, [session?.user?.id, isLoading]);
+
+  // 4. 权益变化实时监听（购买/恢复/到期的即时 UI 反馈；权威仍以 profiles.is_premium 为准）
+  useEffect(() => {
+    const unsubscribe = addPremiumListener((active) => {
+      if (active) setIsPremium(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const refreshProfile = async () => {
     if (user?.id) {
       await fetchProfile(user.id);
     }
+  };
+
+  /** 购买/恢复成功后刷新会员状态：SDK 即时值 + webhook 落库后的权威值 */
+  const refreshPremiumStatus = async (): Promise<boolean> => {
+    const sdkActive = await fetchPremiumStatus();
+    await refreshProfile();
+    return sdkActive;
   };
 
   const signUpWithProfession = async (
@@ -131,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setUser(null);
     setProfile(null);
+    setIsPremium(false);
   };
 
   return (
@@ -139,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         user,
         profile,
+        isPremium,
         isLoading,
         selectedOnboardingProfession,
         setSelectedOnboardingProfession,
@@ -146,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signOut,
         refreshProfile,
+        refreshPremiumStatus,
       }}
     >
       {children}

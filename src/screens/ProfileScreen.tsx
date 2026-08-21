@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil } from 'lucide-react-native';
+import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil, Crown, ChevronRight } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ProfessionBadge } from '../components/ProfessionBadge';
@@ -25,11 +25,12 @@ import { BlockedEntry, fetchMyBlocklist, unblockUser } from '../lib/blocklist';
 interface ProfileScreenProps {
   onBack: () => void;
   onLoggedOut: () => void;
+  onOpenPaywall: () => void;
 }
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOut }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOut, onOpenPaywall }) => {
   const { t, i18n } = useTranslation();
-  const { profile, user, signOut, isLoading, refreshProfile } = useAuth();
+  const { profile, user, signOut, isLoading, refreshProfile, isPremium } = useAuth();
 
   const [confirmLogoutModal, setConfirmLogoutModal] = useState(false);
   const [blocklistModal, setBlocklistModal] = useState(false);
@@ -156,6 +157,30 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
             <Text style={styles.editBioBtnText}>{t('profile.edit_bio')}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Premium Membership Card（高级会员 = 身份标识，暂无功能权益） */}
+        <TouchableOpacity
+          style={styles.premiumCard}
+          onPress={onOpenPaywall}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.premiumIcon, isPremium && styles.premiumIconActive]}>
+            <Crown size={20} color={isPremium ? theme.colors.white : theme.colors.warning} />
+          </View>
+          <View style={styles.premiumInfo}>
+            <Text style={styles.premiumTitle}>
+              {isPremium ? t('premium.member_label') : t('premium.cta_title')}
+            </Text>
+            <Text style={styles.premiumSub}>
+              {isPremium
+                ? profile?.premium_expires_at
+                  ? t('premium.expires_at', { date: new Date(profile.premium_expires_at).toLocaleDateString() })
+                  : t('premium.member_lifetime')
+                : t('premium.cta_sub')}
+            </Text>
+          </View>
+          <ChevronRight size={20} color={theme.colors.textFaint} />
+        </TouchableOpacity>
 
         {/* Settings List */}
         <View style={styles.sectionCard}>
@@ -476,6 +501,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 16,
+  },
+  premiumCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    marginTop: 12,
+    gap: 12,
+  },
+  premiumIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumIconActive: {
+    backgroundColor: theme.colors.warning,
+  },
+  premiumInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  premiumTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  premiumSub: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
   },
   sectionItem: {
     flexDirection: 'row',

@@ -17,6 +17,9 @@ export interface Profile {
   bio?: string | null;
   created_at: string;
   updated_at?: string;
+  last_seen?: string | null;
+  is_premium?: boolean;
+  premium_expires_at?: string | null;
 }
 
 export interface Topic {
