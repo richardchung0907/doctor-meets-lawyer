@@ -45,7 +45,7 @@
     "login_success": "登录成功",
     "signup_success": "注册成功！已自动登录",
     "err_invalid": "请填写所有必填字段",
-  "err_gender_required": "请选择性别",
+    "err_gender_required": "请选择性别",
     "err_auth_failed": "认证失败，请检查邮箱及密码"
   },
   "feed": {
@@ -112,5 +112,29 @@
     "feed": "话题大厅",
     "messages": "私信",
     "profile": "个人中心"
+  },
+  "premium": {
+    "title": "高级会员",
+    "hero_title": "升级为高级会员",
+    "early_badge": "早鸟升级 · 新权限即将开启",
+    "benefit_identity": "专属高级会员身份标识，彰显你在专业社区中的地位。",
+    "benefit_future": "新权限将陆续开放，早鸟以优惠价抢先锁定。",
+    "price_period": "仅限年费",
+    "price_note": "早鸟优惠价，新权限上线后恢复标准价格。",
+    "price_placeholder": "请使用正式版查看价格",
+    "year_unit": "年",
+    "upgrade": "立即升级",
+    "restore": "恢复购买",
+    "already": "您已是高级会员",
+    "member_label": "高级会员",
+    "member_lifetime": "感谢你的支持",
+    "expires_at": "有效期至 {{date}}",
+    "cta_title": "升级为高级会员",
+    "cta_sub": "早鸟优惠 · 新权限即将开启",
+    "sdk_unavailable": "当前环境不支持购买，请使用正式安装版。",
+    "upgrade_success_title": "升级成功",
+    "upgrade_success_message": "欢迎加入高级会员！",
+    "restore_success_title": "恢复成功",
+    "restore_success_message": "已恢复高级会员身份。"
   }
 }

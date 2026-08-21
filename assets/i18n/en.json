@@ -45,7 +45,7 @@
     "login_success": "Login successful",
     "signup_success": "Signup successful! Logged in.",
     "err_invalid": "Please fill in all required fields",
-  "err_gender_required": "Please select your gender",
+    "err_gender_required": "Please select your gender",
     "err_auth_failed": "Authentication failed. Please check your credentials."
   },
   "feed": {
@@ -112,5 +112,29 @@
     "feed": "Topic Hall",
     "messages": "Chats",
     "profile": "Profile"
+  },
+  "premium": {
+    "title": "Premium Member",
+    "hero_title": "Become a Premium Member",
+    "early_badge": "Early Bird · More perks coming soon",
+    "benefit_identity": "A dedicated premium identity in the community, showing your commitment to professional networking.",
+    "benefit_future": "New permissions are rolling out gradually — early birds lock in the best price now.",
+    "price_period": "Annual Membership",
+    "price_note": "Early-bird price. The price will return to standard once new perks are released.",
+    "price_placeholder": "See price in the release build",
+    "year_unit": "year",
+    "upgrade": "Upgrade Now",
+    "restore": "Restore Purchase",
+    "already": "You're a Premium Member",
+    "member_label": "Premium Member",
+    "member_lifetime": "Thank you for your support",
+    "expires_at": "Valid until {{date}}",
+    "cta_title": "Go Premium",
+    "cta_sub": "Early bird · More perks coming soon",
+    "sdk_unavailable": "Purchases are not available in this environment. Please use the release build.",
+    "upgrade_success_title": "Welcome to Premium",
+    "upgrade_success_message": "Welcome to Premium Membership!",
+    "restore_success_title": "Restore Successful",
+    "restore_success_message": "Your premium membership has been restored."
   }
 }

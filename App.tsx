@@ -10,6 +10,7 @@ import { ConversationsScreen } from './src/screens/ConversationsScreen';
 import { ChatRoomScreen } from './src/screens/ChatRoomScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { OtherUserProfileScreen } from './src/screens/OtherUserProfileScreen';
+import { PaywallScreen } from './src/screens/PaywallScreen';
 import { ProfessionKey } from './src/types/database';
 import { Message } from './src/types/database';
 import { loadPersistedLanguage } from './src/i18n';
@@ -23,7 +24,7 @@ const AppNavigator: React.FC = () => {
   const { t } = useTranslation();
   const { session, isLoading, user } = useAuth();
 
-  const [activeScreen, setActiveScreen] = useState<'landing' | 'auth' | 'main' | 'chat'>('landing');
+  const [activeScreen, setActiveScreen] = useState<'landing' | 'auth' | 'main' | 'chat' | 'paywall'>('landing');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [selectedProfession, setSelectedProfession] = useState<ProfessionKey | null>(null);
 
@@ -244,7 +245,16 @@ const AppNavigator: React.FC = () => {
     );
   }
 
-  // 5. Main Tab Navigation
+  // 5. Paywall Screen（高级会员升级页，全屏）
+  if (activeScreen === 'paywall') {
+    return (
+      <PaywallScreen
+        onBack={() => setActiveScreen('main')}
+      />
+    );
+  }
+
+  // 6. Main Tab Navigation
   return (
     <SafeAreaView style={styles.mainContainer}>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
@@ -275,6 +285,7 @@ const AppNavigator: React.FC = () => {
           <ProfileScreen
             onBack={() => setCurrentTab('feed')}
             onLoggedOut={() => setActiveScreen('landing')}
+            onOpenPaywall={() => setActiveScreen('paywall')}
           />
         )}
       </View>
