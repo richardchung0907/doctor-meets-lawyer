@@ -118,6 +118,13 @@ Deno.serve(async (req) => {
       return json(400, { ok: false, error: 'missing app_user_id' });
     }
 
+    // 防御：app_user_id 必须是合法 UUID（本项目的 supabaseUid）；非法输入直接 400 不重试
+    // （否则 Postgres 会报 invalid uuid 语法 → 500 → RevenueCat 无限重试）
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(userId)) {
+      return json(400, { ok: false, error: 'invalid app_user_id (must be uuid)' });
+    }
+
     // 5. 按事件类型更新 profiles（权威落库）
     if (ACTIVE_EVENTS.has(type)) {
       // 购买/续订/变更/恢复 → 身份生效；订阅给到期时间，非订阅（lifetime）到期为 null

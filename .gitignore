@@ -14,6 +14,7 @@ scripts/mount_emulator.py
 ios-signing/
 docs/appstore/
 docs/revenuecat/
+docs/supabase/
 *.p8
 *.p12
 *.mobileprovision
