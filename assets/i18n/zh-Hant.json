@@ -28,6 +28,7 @@
     "signup": "註冊帳號",
     "email": "電郵地址",
     "password": "密碼",
+    "confirm_password": "重新輸入密碼",
     "username": "用戶名稱 / 稱呼",
     "profession": "專業身份",
     "gender": "性別",
@@ -44,6 +45,7 @@
     "submitting": "處理中...",
     "login_success": "登入成功",
     "signup_success": "註冊成功！已自動登入",
+    "err_password_mismatch": "兩次輸入的密碼不一致",
     "err_invalid": "請填寫所有必填欄位",
     "err_gender_required": "請選擇性別",
     "err_auth_failed": "認證失敗，請檢查電郵及密碼"

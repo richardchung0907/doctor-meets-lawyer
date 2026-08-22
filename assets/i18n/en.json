@@ -28,6 +28,7 @@
     "signup": "Sign Up",
     "email": "Email Address",
     "password": "Password",
+    "confirm_password": "Confirm Password",
     "username": "Username / Name",
     "profession": "Profession",
     "gender": "Gender",
@@ -44,6 +45,7 @@
     "submitting": "Processing...",
     "login_success": "Login successful",
     "signup_success": "Signup successful! Logged in.",
+    "err_password_mismatch": "Passwords do not match",
     "err_invalid": "Please fill in all required fields",
     "err_gender_required": "Please select your gender",
     "err_auth_failed": "Authentication failed. Please check your credentials."

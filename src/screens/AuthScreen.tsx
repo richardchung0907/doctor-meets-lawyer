@@ -37,6 +37,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [profession, setProfession] = useState<ProfessionKey>(
     initialProfession || 'medical_doctor'
@@ -62,6 +63,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       }
       if (!gender) {
         setErrorMessage(t('auth.err_gender_required'));
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage(t('auth.err_password_mismatch'));
         return;
       }
       const parsedAge = age ? parseInt(age, 10) : undefined;
@@ -254,6 +259,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </View>
 
           {mode === 'signup' && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t('auth.confirm_password')} *</Text>
+              <View style={styles.inputWrapper}>
+                <Lock size={18} color={theme.colors.textFaint} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="••••••••"
+                  placeholderTextColor={theme.colors.textFaint}
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+              </View>
+            </View>
+          )}
+
+          {mode === 'signup' && (
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t('auth.bio')}</Text>
@@ -294,6 +316,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             style={styles.toggleModeBtn}
             onPress={() => {
               setMode(mode === 'signup' ? 'login' : 'signup');
+              setConfirmPassword('');
               setErrorMessage(null);
             }}
           >

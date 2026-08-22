@@ -28,6 +28,7 @@
     "signup": "注册账号",
     "email": "邮箱地址",
     "password": "密码",
+    "confirm_password": "重新输入密码",
     "username": "用户名 / 称呼",
     "profession": "专业身份",
     "gender": "性别",
@@ -44,6 +45,7 @@
     "submitting": "处理中...",
     "login_success": "登录成功",
     "signup_success": "注册成功！已自动登录",
+    "err_password_mismatch": "两次输入的密码不一致",
     "err_invalid": "请填写所有必填字段",
     "err_gender_required": "请选择性别",
     "err_auth_failed": "认证失败，请检查邮箱及密码"
