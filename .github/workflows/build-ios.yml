@@ -68,9 +68,23 @@ jobs:
       # expo-localization 的 switch 缺 @unknown default 报 error。补一个。
       - name: Patch expo-localization for iOS 26 SDK
         run: |
-          FILE=node_modules/expo-localization/ios/LocalizationModule.swift
-          perl -0pi -e 's/(case \.iso8601:\n\s+return "iso8601"\n)/$1    @unknown default:\n      return ""\n/' "$FILE"
-          grep -n -A2 'unknown default' "$FILE"
+          python3 - <<'PY'
+          import pathlib, re, sys
+          f = pathlib.Path('node_modules/expo-localization/ios/LocalizationModule.swift')
+          src = f.read_text(encoding='utf-8')
+          m = re.search(r'case \.iso8601:\n(\s+)return "iso8601"\n', src)
+          if not m:
+              print('[ERROR] 未找到 iso8601 case，取消补丁')
+              sys.exit(1)
+          old = m.group(0)
+          new = old + '    @unknown default:\n      return ""\n'
+          if '@unknown default' not in src:
+              f.write_text(src.replace(old, new, 1), encoding='utf-8')
+              print('[OK] 已插入 @unknown default')
+          else:
+              print('[SKIP] 已存在 @unknown default')
+          PY
+          grep -n -A2 'unknown default' node_modules/expo-localization/ios/LocalizationModule.swift
 
       - name: Discover workspace & scheme
         id: discover
