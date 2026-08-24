@@ -90,8 +90,9 @@ jobs:
           plutil -replace provisioningProfiles -xml "<dict><key>com.richardchung.doctormeetslawyer</key><string>${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}</string></dict>" ios/ExportOptions.plist
 
       - name: Archive iOS app
+        # discover 输出的 workspace 是相对仓库根的路径（ios/xxx.xcworkspace），
+        # 这里不能再 cd ios（否则变成 ios/ios/xxx 不存在）
         run: |
-          cd ios
           xcodebuild -workspace "${{ steps.discover.outputs.workspace }}" \
             -scheme "${{ steps.discover.outputs.scheme }}" \
             -configuration Release \
@@ -105,8 +106,8 @@ jobs:
             archive
 
       - name: Export IPA
+        # ExportOptions.plist 已在 prepare 步骤复制到 ios/（相对仓库根）
         run: |
-          cd ios
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
