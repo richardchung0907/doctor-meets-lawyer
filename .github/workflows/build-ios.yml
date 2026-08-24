@@ -18,10 +18,11 @@ on:
 jobs:
   build-ios:
     name: Compile iOS IPA & Upload to TestFlight
-    # macos-latest 现为 Xcode 26.6（Swift 6 模式）→ expo-localization 等 pod 报
-    # 'switch must be exhaustive' error。Expo SDK 52 官方支持 Xcode 15.1-16.x，
-    # pin macos-15（Xcode 16.x）规避（见 doctor-meets-lawyer-ios-build skill 坑 4）。
-    runs-on: macos-15
+    # 必须用 Xcode 26（macos-latest）构建：ASC 2026 起拒绝 iOS 26 SDK 以下的上传
+    # （macos-15/Xcode 16 编的 iOS 18.5 SDK 会被 altool 409 拒）。但 Xcode 26 默认
+    # Swift 6 模式会让 expo-localization 等 pod 报 'switch must be exhaustive' error，
+    # 故 archive 时用 SWIFT_VERSION=5.0 强制 Swift 5 语言模式（见 ios-build skill 坑 5）。
+    runs-on: macos-latest
     timeout-minutes: 120
 
     steps:
@@ -106,6 +107,7 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=3W8574PF9N \
             PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}" \
+            SWIFT_VERSION=5.0 \
             archive
 
       - name: Export IPA
