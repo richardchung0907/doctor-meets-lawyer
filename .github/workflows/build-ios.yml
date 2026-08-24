@@ -18,7 +18,10 @@ on:
 jobs:
   build-ios:
     name: Compile iOS IPA & Upload to TestFlight
-    runs-on: macos-latest
+    # macos-latest 现为 Xcode 26.6（Swift 6 模式）→ expo-localization 等 pod 报
+    # 'switch must be exhaustive' error。Expo SDK 52 官方支持 Xcode 15.1-16.x，
+    # pin macos-15（Xcode 16.x）规避（见 doctor-meets-lawyer-ios-build skill 坑 4）。
+    runs-on: macos-15
     timeout-minutes: 120
 
     steps:
