@@ -64,6 +64,14 @@ jobs:
           echo "--- after ---"
           grep -n 'SWIFT_VERSION' project.pbxproj | head -20
 
+      # iOS 26 SDK 的 Foundation 把 Calendar.Identifier 标记为 frozen enum，
+      # expo-localization 的 switch 缺 @unknown default 报 error。补一个。
+      - name: Patch expo-localization for iOS 26 SDK
+        run: |
+          FILE=node_modules/expo-localization/ios/LocalizationModule.swift
+          perl -0pi -e 's/(case \.iso8601:\n\s+return "iso8601"\n)/$1    @unknown default:\n      return ""\n/' "$FILE"
+          grep -n -A2 'unknown default' "$FILE"
+
       - name: Discover workspace & scheme
         id: discover
         run: |
