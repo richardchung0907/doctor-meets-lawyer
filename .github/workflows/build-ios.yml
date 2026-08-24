@@ -48,6 +48,22 @@ jobs:
           cd ios
           pod install
 
+      # Xcode 26 的 swiftc 对 non-frozen enum 的 switch 穷尽检查是 error（Swift 6 模式），
+      # 即使命令行传 SWIFT_VERSION=5.0 也不影响 Pods target。这里直接改 Pods.xcodeproj：
+      # 把所有 SWIFT_VERSION 统一为 5.0；若 Pods 未显式设置，则给 project 级补一行让所有
+      # pod target 继承 Swift 5 语言模式（见 doctor-meets-lawyer-ios-build skill 坑 5）。
+      - name: Force Swift 5 language mode for Pods
+        run: |
+          cd ios/Pods/Pods.xcodeproj
+          echo "--- before ---"
+          grep -n 'SWIFT_VERSION' project.pbxproj | head -20
+          perl -0pi -e 's/SWIFT_VERSION = [0-9][0-9.]*;/SWIFT_VERSION = 5.0;/g' project.pbxproj
+          if ! grep -q 'SWIFT_VERSION' project.pbxproj; then
+            perl -0pi -e 's/(\t\t\t\tobjectVersion = \d+;)/$1\n\t\t\t\tSWIFT_VERSION = 5.0;/' project.pbxproj
+          fi
+          echo "--- after ---"
+          grep -n 'SWIFT_VERSION' project.pbxproj | head -20
+
       - name: Discover workspace & scheme
         id: discover
         run: |
