@@ -11,6 +11,10 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  Pressable,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Plus, MessageSquarePlus, RefreshCw, X, Send } from 'lucide-react-native';
@@ -134,6 +138,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
   });
 
   const handlePostTopic = async () => {
+    Keyboard.dismiss();
     if (!user) return;
     const trimmed = newTopicContent.trim();
     // 防御：输入框已限制，提交前再兜底一次（30 全角 / 60 半角 / 混合按宽度）
@@ -288,7 +293,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
 
       {/* Post Topic Modal */}
       <Modal visible={isModalOpen} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('feed.modal_title')}</Text>
@@ -335,7 +344,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

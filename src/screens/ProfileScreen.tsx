@@ -10,6 +10,10 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  Pressable,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil, Crown, ChevronRight } from 'lucide-react-native';
@@ -83,6 +87,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
   };
 
   const saveBio = async () => {
+    Keyboard.dismiss();
     if (!user) return;
     setBioSaving(true);
     const { error } = await supabase
@@ -310,7 +315,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
         animationType="fade"
         onRequestClose={() => setBioModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} />
           <View style={styles.bioModalCard}>
             <Text style={styles.modalTitle}>{t('profile.edit_bio')}</Text>
             <TextInput
@@ -344,7 +353,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

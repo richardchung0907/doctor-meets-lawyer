@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "com.richardchung.doctormeetslawyer",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E1E5E8"
