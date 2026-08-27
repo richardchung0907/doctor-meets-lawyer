@@ -1,6 +1,6 @@
 ---
 name: doctor-meets-lawyer-ios-build
-description: 本项目用 GitHub Actions 编译 iOS IPA 并自动上传 TestFlight 的触发链路与踩坑手册（2026-08-24 全链路打通，2026-08-25 二次构建成功，2026-08-27 三次构建成功）。涵盖：非交互触发（keys.txt fine-grained PAT / workflow_dispatch / tag v*-ios）、build-ios.yml 全链路踩坑与成功解法（archive 的 ios/ios 路径重复、profile 缺 Push Notifications capability、Xcode 26 Swift6 / iOS 26 SDK frozen enum 编译 error、macos-15 构建被 ASC 409 拒、perl 替换不可靠、**TestFlight bundle version 冲突 -19232**）、job 日志下载排障（302 → Azure 签名 URL，gzip/BOM 兼容）、TestFlight 分发配置现状（新 build 关联 Internal Testers 组 SOP）。接手「把 iOS app 编译推到 TestFlight 供测试」任务先读此 skill + doctor-meets-lawyer-ios-release（ASC 上架侧）。
+description: 本项目用 GitHub Actions 编译 iOS IPA 并自动上传 TestFlight 的触发链路与踩坑手册（2026-08-24 全链路打通，2026-08-25 二次构建成功，2026-08-27 三次构建成功）。涵盖：非交互触发（keys.txt fine-grained PAT / workflow_dispatch / tag v*-ios）、build-ios.yml 全链路踩坑与成功解法（archive 的 ios/ios 路径重复、profile 缺 Push Notifications capability、Xcode 26 Swift6 / iOS 26 SDK frozen enum 编译 error、macos-15 构建被 ASC 409 拒、perl 替换不可靠、**TestFlight bundle version 冲突 -19232**）、job 日志下载排障（302 → Azure 签名 URL，gzip/BOM 兼容）、TestFlight 分发配置现状（新 build 关联 Internal Testers 组 SOP）、**APNs 推送凭证配置（eas-cli GraphQL 非交互上传 push key；pg_net 日志排障 / InvalidCredentials）**。接手「把 iOS app 编译推到 TestFlight 供测试」任务先读此 skill + doctor-meets-lawyer-ios-release（ASC 上架侧）。
 invocation: model+user
 ---
 
@@ -71,6 +71,18 @@ python scripts/appstore/_query_builds.py
   4. 本地解析 entitlements 验证 `aps-environment: "production"` 已包含（plistlib 提取 `<plist>...</plist>`）。
   5. `python scripts/appstore/setup_github_secrets.py` 重传 secrets（**`IOS_PROVISIONING_PROFILE_BASE64` 必须换新**；NAME 沿用同名无需动）。8/8 全绿。
 
+### 坑 2b（2026-08-27 解决）：iOS 推送通知链接不上——Expo 项目缺 APNs 凭证
+- **现象**：app 前台能收到通知（Realtime 本地通知），后台/锁屏无系统通知。pg_net 日志（`net._http_response.content`）显示 Expo Push 返回 `InvalidCredentials`：`"Could not find APNs credentials for com.richardchung.doctormeetslawyer"`。
+- **根因**：Expo 项目需要 APNs Auth Key 才能向 iOS 发远程推送。`AuthKey_LSLS88W574.p8` 是 **App Store Connect API Key**（用于 TestFlight 上传），**不是** APNs 推送密钥；`distribution.pem/.cer` 是 Apple Distribution 签名证书，也不是推送凭证。
+- **解法（APNs Auth Key 创建 + 非交互上传到 Expo）**：
+  1. Apple Developer 后台（Certificates, Identifiers & Profiles -> Keys -> `+`）新建启用 Push Notifications 的 Key，下载 `.p8`，记下 Key ID。
+  2. `eas credentials --platform ios` 是纯交互命令，非交互环境不可用（源码报错 "A new push key cannot be created in non-interactive mode"）。**非交互上传方式**：通过 eas-cli 内部模块直接调 EAS GraphQL API（`https://api.expo.dev/graphql`，认证头 `expo-session: <~/.expo/state.json 的 auth.sessionSecret>`）：
+     - `createPushKeyAsync`（`eas-cli/build/credentials/ios/api/GraphqlClient.js`）：输入 `{ apnsKeyP8, apnsKeyId, teamId, teamName }`，返回 pushKey（含 id + appleTeam）
+     - `createOrGetIosAppCredentialsWithCommonFieldsAsync`：输入 `appLookupParams = { account, projectName, bundleIdentifier }`，返回 iosAppCredentials
+     - `updateIosAppCredentialsAsync({ applePushKeyId })`：绑定 push key 到 app
+  3. 验证：直连 `https://exp.host/--/api/v2/push/send` 给真实 push token 发测试推送，返回 `{"data":{"status":"ok"}}`（不再 InvalidCredentials）。
+- **验证推送结果**（生产库 SQL）：`SELECT id, status_code, LEFT(content, 220) AS content_preview FROM net._http_response ORDER BY id DESC LIMIT 10;`
+- **注意**：Provisioning profile 必须含 `aps-environment`（坑 2 已修）。APNs Auth Key 是 **账号级凭据**（同一 Apple Team 下所有 app 通用），上传一次即可用于多个项目。
 ### 坑 3（✅ 已绕过）：job 日志下载 302 + gzip/BOM 混合
 - `GET /actions/jobs/{id}/logs` → **302 → Azure 签名 URL**（无需认证、1 分钟有效）；必须禁跟随重定向手动取 Location（urllib 自动跟随会 401）。
 - 内容可能是 **gzip 或带 UTF-8 BOM 的纯文本**——解析先试 `gzip.decompress`，失败剥 BOM 当文本（`_debug_ios_logs.py` 已封装）。

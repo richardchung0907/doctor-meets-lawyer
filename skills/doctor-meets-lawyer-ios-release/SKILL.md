@@ -1,6 +1,6 @@
 ---
 name: doctor-meets-lawyer-ios-release
-description: 本项目 iOS 自动编译 + App Store 上架（仅香港）的资料库与踩坑手册。含：从另一项目'C:\Users\User\Desktop\MYproject\Filter_APP2'（richy-Lite，已成功上架全球 App Store 的 Flutter 专案）移植的账号级凭据、证书、App Store Connect 自动化脚本与 CI 方案的适配记录；Expo SDK 52 在 GitHub Actions macOS runner 上的构建链路（prebuild → pod install → xcodebuild → TestFlight）；App Store Connect REST API（JWT ES256）自动提交审核；以及"仅香港区"上架、下一步行动清单与已知踩坑。
+description: 本项目 iOS 自动编译 + App Store 上架（仅香港）的资料库与踩坑手册。含：从另一项目'C:\Users\User\Desktop\MYproject\Filter_APP2'（richy-Lite，已成功上架全球 App Store 的 Flutter 专案）移植的账号级凭据、证书、App Store Connect 自动化脚本与 CI 方案的适配记录；**APNs Auth Key 上传 Expo 完整 SOP（非交互 GraphQL）与推送链路验证**；Expo SDK 52 在 GitHub Actions macOS runner 上的构建链路（prebuild → pod install → xcodebuild → TestFlight）；App Store Connect REST API（JWT ES256）自动提交审核；以及"仅香港区"上架、下一步行动清单与已知踩坑。
 invocation: model+user
 ---
 
@@ -136,6 +136,32 @@ invocation: model+user
 - **2026 schema 新增字段**：布尔类 `advertising` / `ageAssurance` / `healthOrWellnessTopics` / `lootBox` / `messagingAndChat` / `parentalControls` / `socialMedia` / `socialMediaAgeRestricted` / `userGeneratedContent`；枚举类新增 `gunsOrOtherWeapons` / `violenceRealistic`（本地 OpenAPI `docs/appstore-connect/openapi/openapi.json` 可查 schema `AgeRatingDeclaration`，`_extract_age_schema2.py` 提取）。
 - **本项目申报值（UGC 社交 + 医疗话题，2026-08-22 晚场已 PATCH 并验证）**：`medicalOrTreatmentInformation=INFREQUENT_OR_MILD`（用户指定「医疗或保健」）、`healthOrWellnessTopics=true`、`userGeneratedContent=true`、`messagingAndChat=true`（有私讯）、`socialMedia=true`、`profanityOrCrudeHumor=INFREQUENT_OR_MILD`（仅 blocklist 无自动审核）、其余枚举 NONE / 其余布尔 false；`ageRatingOverrideV2` 与 `koreaAgeRatingOverride` 保持 NONE。`_set_age_rating.py` 可重跑幂等。
 - **空值扫描（2026-08-22 晚场 `_null_scan.py`）**：App 级 `contentRightsDeclaration` 与版本级 `usesIdfa` 都是 `null`（网页显示未声明）且 PATCH 可修——`contentRightsDeclaration` 用 `PATCH /v1/apps/{id}` 设 `DOES_NOT_USE_THIRD_PARTY_CONTENT`（UGC 无第三方授权内容），`usesIdfa` 用 `PATCH /v1/appStoreVersions/{id}` 设 `false`（无广告）。其他 NULL/EMPTY 分类见「空值扫描结论」章节，别重复扫描折腾。
+
+## APNs 推送凭证配置（2026-08-27 全链路打通）
+
+> iOS 远程推送（后台/锁屏系统通知）依赖两块：**Provisioning profile 含 `aps-environment`**（构建侧，见 ios-build skill 坑 2）+ **Expo 项目配置 APNs Auth Key**（本节约）。
+
+### 凭证区分（易混）
+- `AuthKey_LSLS88W574.p8` = **App Store Connect API Key**（keys.txt "Key ID for App Store Connect API" = `LSLS88W574`）：用于 TestFlight 上传 / ASC API 认证，**不能用于推送**。
+- `ios-signing/AuthKey_WADZS536MZ.p8` = **APNs Auth Key**（Key ID `WADZS536MZ`，team `3W8574PF9N`）：推送专用。**账号级凭据**，同一 Apple Team 下所有 app 通用（Filter_APP2 若需要可直接复用）。
+- `distribution.pem/.cer`、`certificates.p12` = Apple Distribution 签名证书。
+
+### 创建（唯一人工步骤）
+Apple Developer 后台 -> Certificates, Identifiers & Profiles -> Keys -> `+` -> 勾选 **Apple Push Notifications service (APNs)** -> 下载 `.p8`，记下 Key ID。
+
+### 上传到 Expo（非交互 SOP，2026-08-27 实测）
+`eas credentials --platform ios` 纯交互，非交互环境不可用（源码报错 non-interactive 不可创建）。改用 eas-cli 内部模块直调 EAS GraphQL：
+1. 认证：`https://api.expo.dev/graphql`，头 `expo-session: <~/.expo/state.json 的 auth.sessionSecret>`（JSON 字符串原样传，不是 Bearer）。
+2. `createPushKeyAsync`（`eas-cli/build/credentials/ios/api/GraphqlClient.js`）：输入 `{ apnsKeyP8, apnsKeyId, teamId, teamName }` -> pushKey（含 id + appleTeam）。
+3. `createOrGetIosAppCredentialsWithCommonFieldsAsync`：输入 `{ account, projectName, bundleIdentifier }` -> iosAppCredentials。
+4. `updateIosAppCredentialsAsync({ applePushKeyId })`：绑定到 app。
+现状（2026-08-27）：push key `3fe68bb3-9fe4-4bc8-b997-c38bd5502f1f` 已绑定 `com.richardchung.doctormeetslawyer`。
+
+### 验证
+- 直连 `https://exp.host/--/api/v2/push/send` 给真实 push token 发测试 -> `{"data":{"status":"ok"}}`。
+- 生产库 `SELECT id, status_code, LEFT(content, 220) AS content_preview FROM net._http_response ORDER BY id DESC LIMIT 10;` 看历史推送结果。
+- 推送返回 `InvalidCredentials`（"Could not find APNs credentials"）= APNs 凭证缺失/未绑定。
+
 
 ## ASC 后台部署 SOP（2026-08-22 实测跑通）
 

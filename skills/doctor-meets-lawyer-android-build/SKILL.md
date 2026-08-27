@@ -1,6 +1,6 @@
 ---
 name: doctor-meets-lawyer-android-build
-description: 本项目用 GitHub Actions 编译 Android APK 的踩坑记录与成功解法。涉及：非交互触发 workflow_dispatch、fine-grained PAT（keys.txt / remote 内嵌 token）、2026 年 GitHub artifact 下载 API 变更（版本头 2026-03-10 + /zip 302 → 签名 URL）、Python urllib 302 处理、Windows Python UTF-8 输出、PowerShell 引号转义、产物与 mount_emulator.py 兼容。接手本项目的 agent 编译 APK 前先读此 skill。
+description: 本项目用 GitHub Actions 编译 Android APK 的踩坑记录与成功解法。涉及：非交互触发 workflow_dispatch、fine-grained PAT（keys.txt / remote 内嵌 token）、2026 年 GitHub artifact 下载 API 变更（版本头 2026-03-10 + /zip 302 → 签名 URL）、Python urllib 302 处理、Windows Python UTF-8 输出、PowerShell 引号转义、产物与 mount_emulator.py 兼容、**Android 远程推送 channelId 要求与 Expo Go 限制（2026-08-27）**。接手本项目的 agent 编译 APK 前先读此 skill。
 invocation: model+user
 ---
 
@@ -122,6 +122,18 @@ python scripts/mount_emulator.py
 - run `conclusion == success`（失败看 `html_url`）
 - artifact zip 可下载且含 `.apk`；APK 魔数 `PK\x03\x04`
 - `git status` 干净（`build_downloads/`、`scripts/sim/` 保持未跟踪）
+
+## 推送（Android release APK）注意事项（2026-08-27）
+- 后台/锁屏系统通知链路：`messages` INSERT 触发器 -> pg_net -> Edge Function `notify` -> Expo Push API -> FCM -> 设备。
+- **Android 跨版本通知机制（2026-08-27 源码级研究结论）**：
+  - **API 33+（Android 13+）**：`POST_NOTIFICATIONS` 运行时权限。expo-notifications 的 `getPermissionsAsync/requestPermissionsAsync` 走 API 33 路径弹窗；拒绝则 `syncPushToken` 不存 token（收不到，设计行为）。
+  - **API 26-32（Android 8-12）**：通知渠道主导显示。payload 必须带 `channelId: 'messages'`（对齐客户端 `getExpoPushTokenAsync` 创建的高重要度渠道，锁屏 + 响铃 + head-up）；不带则投递默认渠道可能锁屏不显示/不响铃。
+  - **API 24-25（Android 7.x，无渠道）**：由**通知 priority** 决定。payload 必须带 `priority: 'high'`（`RemoteNotificationContent.priority` 映射 FCM priority：HIGH -> `PRIORITY_HIGH`），否则 `PRIORITY_DEFAULT` 不弹 head-up 横幅、锁屏不醒目。**notify 函数已加（commit e3244e2）**；`channelId` 在 API<26 被忽略、无副作用。
+  - **兼容性事实（expo-notifications 0.29.14 源码）**：`setNotificationChannelAsync` 在 API<26 返回 null（no-op，不崩）；API<33 权限走 classic 路径只查 `areNotificationsEnabled()`（不弹窗，直接 granted）；API<26 的声音/震动由 ExpoNotificationBuilder 用旧 API `setSound/setVibrate/setDefaults` 显式设置。
+- 后台推送**不依赖 APK 构建**（系统级），旧 release APK 也能收；只要用户登录过（`profiles.push_token` 有值）+ Android 13+ 通知权限已授予。
+- 客户端 `setNotificationHandler` 前台抑制远程推送（避免与 Realtime 本地通知双横幅）才需要**重新构建 APK** 生效。
+- **Expo Go 收不到 Android 远程推送**（官方限制，SDK 53 起移除），必须 release APK / development build。
+
 
 ## 注意
 
