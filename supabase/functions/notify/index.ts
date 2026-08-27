@@ -81,11 +81,35 @@ Deno.serve(async (req) => {
         title: sender?.username || 'New message',
         body: (msg.content ?? '').slice(0, 150),
         sound: 'default',
+        channelId: 'messages', // Android：走客户端创建的高重要度渠道（锁屏显示 + 响铃）
         data: { conversation_id: msg.conversation_id },
       }),
     });
 
-    return json(200, { ok: true, expo: await res.text() });
+    // 解析 Expo Push 响应，不再吞错误：
+    //  - DeviceNotRegistered → 清除失效 token，避免后续继续向该设备发送
+    //  - 其他 error → 把 Expo 的详细信息原样返回，让 pg_net 日志可读、可排障
+    const text = await res.text();
+    let expoResult: unknown = text;
+    try {
+      const parsed = JSON.parse(text) as {
+        data?: Array<{ status?: string; message?: string; details?: { error?: string } }>;
+      };
+      const first = parsed.data?.[0];
+      if (first?.status === 'error') {
+        const err = first.details?.error ?? '';
+        if (err === 'DeviceNotRegistered' || (first.message ?? '').includes('DeviceNotRegistered')) {
+          await supabase.from('profiles').update({ push_token: null }).eq('id', recipientId);
+          return json(200, { ok: true, note: 'device not registered; token cleared' });
+        }
+        return json(200, { ok: false, error: 'expo push failed', expo: first });
+      }
+      expoResult = parsed.data ?? first ?? text;
+    } catch {
+      // 响应非 JSON，原样返回文本
+    }
+
+    return json(200, { ok: true, expo: expoResult });
   } catch (err) {
     return json(500, { ok: false, error: String(err) });
   }

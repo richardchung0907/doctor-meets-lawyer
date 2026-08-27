@@ -1,19 +1,31 @@
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 /**
  * 前台收到通知时的展示策略（in-app 横幅）。
+ *
+ * 去重策略：
+ * - 远程推送（trigger.type === 'push'）在前台时**不显示**——前台新消息已由
+ *   App.tsx 的 Realtime 订阅 + 本地通知（showLocalNotification）展示，避免双横幅。
+ * - 本地通知（trigger.type !== 'push'）与后台状态不受影响：后台由系统直接展示推送。
  */
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const isForeground = AppState.currentState === 'active';
+    const trigger = notification.request.trigger;
+    const isRemotePush =
+      !!trigger && (trigger as { type?: string }).type === 'push';
+    const suppress = isForeground && isRemotePush;
+    return {
+      shouldShowAlert: !suppress,
+      shouldShowBanner: !suppress,
+      shouldShowList: !suppress,
+      shouldPlaySound: !suppress,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 /** Android 通知渠道：新消息 */
