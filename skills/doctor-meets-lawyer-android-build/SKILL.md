@@ -13,7 +13,8 @@ invocation: model+user
 ## 30 秒速览（现状）
 
 - CI：`.github/workflows/build-android.yml`（name: `Build Android APK`），触发方式 = `push`（main/master）+ `workflow_dispatch`；产物 artifact 名 **`app-release-apk`**。
-- **✅ 2026-08-27 再次验证**：run `#33039600450`（push master 触发）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS（同 HEAD）并行构建一次搞定。
+- **✅ 2026-08-27 早场**：run `#33039600450`（push master 触发）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS（同 HEAD）并行构建一次搞定。
+- **✅ 2026-08-27 晚场（v4）**：run `#33055680824`（push master 触发，commit `2a0719b`）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS 并行构建一次搞定（构建约 10 分钟）。
 - 构建步骤：`npm install --legacy-peer-deps` → `npx expo prebuild --platform android` → `cd android && ./gradlew assembleRelease --no-daemon` → `upload-artifact`（`android/**/*.apk`）。**完整构建约 10 分钟**。
 - **现成脚本（已可用）**：`python scripts/gh_build_download.py`——自动 commit+push 最新修改 → dispatch → 每 2 分钟轮询 → 下载 APK 到 `build_downloads/app/`。别重复造轮子。
 - 产物落点：`build_downloads/app/app-release.apk`（约 62 MB）；`scripts/mount_emulator.py` 递归扫 `build_downloads/**/*.apk` 按**修改时间最新**安装，放子目录即可被识别。
@@ -93,6 +94,17 @@ invocation: model+user
   2. 紧接着 REST dispatch iOS：`POST .../actions/workflows/build-ios.yml/dispatches` body `{"ref":"master"}` → 返回 `200` + body 里 `workflow_run_id`（这是 **iOS** 的 run）。
   3. 写临时 Python 脚本循环 `GET /actions/runs?branch=master&per_page=20`，**按 `run.path` 过滤**（`endswith('build-android.yml')` / `endswith('build-ios.yml')`）拿两个 run id 写 JSON——同 HEAD 两个 run 的 `head_sha` 相同，**只有 `path` 能区分**，别用 head_sha 匹配。
   4. 各自接续：Android `python scripts/gh_build_download.py --run-id <android_run_id>`（只下载模式，run 完成后直接拉 artifact）；iOS `python scripts/gh_build_ios.py --run-id <ios_run_id> --interval 120 --timeout 90`。
+- **2026-08-27 晚场（v4）再次验证同套 SOP**：commit（含 `app.json` 的 `ios.buildNumber` 3→4）→ push master 触发 Android（run `33055680824`）→ dispatch iOS（返回 200 + `workflow_run_id`）→ 按 `run.path` 过滤拿到两个 run id → Android / iOS 并行接续，一次成功。
+- **关键：`gh_build_download.py --run-id` 是纯下载模式（跳过触发与轮询）**——run 未 `completed` 时直接跑会查不到 artifact。需要「先轮询指定 run 到 completed、再下载」时，写临时脚本 import 复用该脚本内部函数（避免重复造轮子）：
+  ```python
+  import importlib.util, sys
+  spec = importlib.util.spec_from_file_location('gbd', 'scripts/gh_build_download.py')
+  gbd = importlib.util.module_from_spec(spec); spec.loader.exec_module(gbd)
+  token = gbd.load_token()
+  # 循环: code, body = gbd.gh('GET', f'/repos/{gbd.REPO}/actions/runs/{RUN_ID}', token)
+  # completed 后: gbd.download_artifact(token, RUN_ID)  # 自动拉 artifact 解压到 build_downloads/app/
+  ```
+  （2026-08-27 晚场实测：Android run 10 分钟完成后下载 63.1 MB APK；复用 `gbd.gh`/`gbd.fmt_duration`/`gbd.download_artifact`。临时脚本用完即删，且 `scripts/*.py` 不入 git）。
 - **并行轮询（平台经验，2026-08-27）**：两个带写权限的子 agent 同时启动会**写作用域冲突**（第二个 spawn 失败）；轮询/下载类任务用**只读子 agent（scout）**或主 agent 直接轮询即可。子 agent 也可能中途被取消，重要进度主 agent 自己盯。
 
 ## 成功路径速查

@@ -1,6 +1,6 @@
 ---
 name: doctor-meets-lawyer-ios-build
-description: 本项目用 GitHub Actions 编译 iOS IPA 并自动上传 TestFlight 的触发链路与踩坑手册（2026-08-24 全链路打通，2026-08-25 二次构建成功，2026-08-27 三次构建成功）。涵盖：非交互触发（keys.txt fine-grained PAT / workflow_dispatch / tag v*-ios）、build-ios.yml 全链路踩坑与成功解法（archive 的 ios/ios 路径重复、profile 缺 Push Notifications capability、Xcode 26 Swift6 / iOS 26 SDK frozen enum 编译 error、macos-15 构建被 ASC 409 拒、perl 替换不可靠、**TestFlight bundle version 冲突 -19232**）、job 日志下载排障（302 → Azure 签名 URL，gzip/BOM 兼容）、TestFlight 分发配置现状（新 build 关联 Internal Testers 组 SOP）、**APNs 推送凭证配置（eas-cli GraphQL 非交互上传 push key；pg_net 日志排障 / InvalidCredentials）**。接手「把 iOS app 编译推到 TestFlight 供测试」任务先读此 skill + doctor-meets-lawyer-ios-release（ASC 上架侧）。
+description: 本项目用 GitHub Actions 编译 iOS IPA 并自动上传 TestFlight 的触发链路与踩坑手册（2026-08-24 全链路打通，2026-08-25 二次构建成功，2026-08-27 早晚场四次构建成功）。涵盖：非交互触发（keys.txt fine-grained PAT / workflow_dispatch / tag v*-ios）、build-ios.yml 全链路踩坑与成功解法（archive 的 ios/ios 路径重复、profile 缺 Push Notifications capability、Xcode 26 Swift6 / iOS 26 SDK frozen enum 编译 error、macos-15 构建被 ASC 409 拒、perl 替换不可靠、**TestFlight bundle version 冲突 -19232**）、job 日志下载排障（302 → Azure 签名 URL，gzip/BOM 兼容）、TestFlight 分发配置现状（新 build 关联 Internal Testers 组 SOP）、**APNs 推送凭证配置（eas-cli GraphQL 非交互上传 push key；pg_net 日志排障 / InvalidCredentials）**。接手「把 iOS app 编译推到 TestFlight 供测试」任务先读此 skill + doctor-meets-lawyer-ios-release（ASC 上架侧）。
 invocation: model+user
 ---
 
@@ -10,18 +10,19 @@ invocation: model+user
 
 需要把最新 App 代码编译成 iOS IPA 并推到 TestFlight 供用户测试（或排查 `build-ios.yml` 构建失败）时，**先读本节**。App Store 上架/ASC 后台配置见 `doctor-meets-lawyer-ios-release`；Android 侧对称手册见 `doctor-meets-lawyer-android-build`。
 
-## 30 秒速览（现状 2026-08-27 三次构建成功 ✅）
+## 30 秒速览（现状 2026-08-27 早晚场四次构建成功 ✅）
 
 - **✅ 已打通（2026-08-24）**：run `#32743132331`（dispatch，14 分钟）17 步骤全绿，IPA 已上传 TestFlight，ASC build id `83b9bc34-b911-43d6-b9cd-411ca50e1f8b`（version 1，`processingState=VALID`，`usesNonExemptEncryption=False`）。
 - **✅ 二次构建（2026-08-25）**：run `#32801673563`（dispatch，12 分钟）全绿，ASC build `5c3c24ce-12b7-4275-ae79-90a50c642920`（version **2**，VALID），**已关联 Internal Testers 组**（详见文末）。途中踩了 bundle version 冲突坑（坑 8）——同 version 每次上传必须递增 `ios.buildNumber`。
-- **✅ 三次构建（2026-08-27）**：run `#33039619292`（dispatch，成功）job 全绿，ASC build `d18bd2c8-8882-412a-bacc-8528b96ceb47`（version **3**，VALID），**已关联 Internal Testers 组**（组内现有 v1/v2/v3 三个 build）。与 Android 同 HEAD 并行构建，run 定位用按 `path` 过滤（见 android-build skill 坑 10）。
+- **✅ 三次构建（2026-08-27 早场）**：run `#33039619292`（dispatch，成功）job 全绿，ASC build `d18bd2c8-8882-412a-bacc-8528b96ceb47`（version **3**，VALID），**已关联 Internal Testers 组**。与 Android 同 HEAD 并行构建，run 定位用按 `path` 过滤（见 android-build skill 坑 10）。
+- **✅ 四次构建（2026-08-27 晚场）**：run `#33055704629`（dispatch，约 6 分钟）job 全绿，ASC build `ee42be04-f2bf-45bc-ac6b-f2ce2e2f1be4`（version **4**，VALID），**已关联 Internal Testers 组**（组内现有 v1/v2/v3/v4 四个 build）。流程：先 commit（`app.json` `ios.buildNumber` 3→4）→ push master 触发 Android → 紧接着 dispatch iOS，与 Android 并行构建一次搞定。
 - CI：`.github/workflows/build-ios.yml`（name: `Build iOS App`）。触发 = **push tag `v*-ios`** + **`workflow_dispatch`**。链路：`npm install` → `expo prebuild` → `pod install` → **强制 Pods Swift 5 + patch expo-localization** → 签名 → `xcodebuild archive`（`SWIFT_VERSION=5.0`）→ `export IPA` → `upload-artifact`（`ios-ipa-release`）→ `Apple-Actions/upload-testflight-build@v1` 上传。
 - **现成脚本**：
   - `python scripts/gh_build_ios.py` —— 非交互触发 + 轮询（push master → dispatch/打 tag → 轮询 → 报告 job 与失败步骤；`--run-id` 接续轮询，`--interval 120` = 每 2 分钟）。
   - `python scripts/appstore/_debug_ios_logs.py <run_id> [--tail N|--errors]` —— 下载 job 日志定位失败根因。
   - `python scripts/appstore/_fix_push_capability.py` —— 修复 profile 缺 Push capability（bundle id 加 capability + 删旧 profile 重建 + 验证 entitlements）。
   - `python scripts/appstore/_query_builds.py` / `_query_beta.py` —— 只读查 ASC build / beta 组。
-- **遗留（TestFlight 分发）**：~~build 已 VALID 但 betaGroups 为空~~ **已解决（2026-08-24）**：Internal Testers 组已建、tester 已入组；**每次新 build 上传后需手动关联到组**（SOP 见文末，build 5c3c24ce v2、d18bd2c8 v3 均已关联）。
+- **遗留（TestFlight 分发）**：~~build 已 VALID 但 betaGroups 为空~~ **已解决（2026-08-24）**：Internal Testers 组已建、tester 已入组；**每次新 build 上传后需手动关联到组**（SOP 见文末，build 5c3c24ce v2、d18bd2c8 v3、ee42be04 v4 均已关联）。
 
 ## 技术栈（本次实测）
 
@@ -115,22 +116,22 @@ python scripts/appstore/_query_builds.py
 - 现象（2026-08-25 run `#32800911386`）：编译/签名/导出/artifact **全部成功**（12 分钟），仅 `Upload to TestFlight` 步失败：`The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: '1'.`（`altool` ExitFailure 31）。
 - **根因**：Expo prebuild 把 `ios.buildNumber`（**默认 `'1'`**，见 `node_modules/@expo/config-plugins/build/ios/Version.js` 的 `getBuildNumber`）**字面写入** Info.plist 的 `CFBundleVersion`；workflow archive 命令里的 `CURRENT_PROJECT_VERSION=${{ github.run_number }}` **从未生效**（Info.plist 是字面值，不是 `$(CURRENT_PROJECT_VERSION)` 引用）。第一次上传（v1）成功只因无历史版本；第二次同值上传必撞。
 - **解法**：`app.json` 显式递增 `ios.buildNumber`（1→2，commit `5fcc8fe`）→ commit + push → 重新 dispatch。
-- **规则**：**同 `expo.version` 下每次新 TestFlight build 都要递增 `ios.buildNumber`**（已用过 1、2、**3**（2026-08-27），下次用 **4**；升级 `version` 后可重置）。改 `app.json` 后 push master 会**额外触发一次 Android 构建**（build-android.yml 监听 push master），产物内容不变，忽略即可——若本来就要发 Android，则正好一次 push 同时满足两侧。
+- **规则**：**同 `expo.version` 下每次新 TestFlight build 都要递增 `ios.buildNumber`**（已用过 1、2、3、**4**（2026-08-27 晚场 v4），下次用 **5**；升级 `version` 后可重置）。改 `app.json` 后 push master 会**额外触发一次 Android 构建**（build-android.yml 监听 push master），产物内容不变，忽略即可——若本来就要发 Android，则正好一次 push 同时满足两侧。
 
 ### 坑 9（✅ 已绕过）：旧 tag 不能触发新构建（复用会构建旧代码）
 - 现象：`v1.0.0-ios` tag 已存在并指向**旧 commit**；`gh_build_ios.py` 的 tag 模式（`step_push_and_tag`）发现本地/远程已有同名 tag 会**复用**，push tag 触发的 build-ios.yml 构建的是**旧代码**（或远程已有同名 tag 时直接跳过不触发）。
 - 解法：新构建一律 **`workflow_dispatch`**（构建 master 最新 HEAD），不要依赖旧 tag；如需 tag 触发就起**新名字**（如 v1.0.1-ios）。2026-08-25 实测：旧 tag 场景下 dispatch 是最稳路径。
 
-## 验证清单（2026-08-24 / 2026-08-25 / 2026-08-27 三次全绿）
+## 验证清单（2026-08-24 / 2026-08-25 / 2026-08-27 早晚场共四次全绿）
 
 - dispatch 200（返回 `workflow_run_id`）；run `conclusion == success`；17 步骤全绿（含 **Upload to TestFlight**）。
-- ASC：`GET /v1/builds?filter[app]=6804181628` → build `83b9bc34...`（v1）+ `5c3c24ce...`（v2）+ `d18bd2c8...`（v3）均 `processingState=VALID`，`usesNonExemptEncryption=False`。
+- ASC：`GET /v1/builds?filter[app]=6804181628` → build `83b9bc34...`（v1）+ `5c3c24ce...`（v2）+ `d18bd2c8...`（v3）+ `ee42be04...`（v4）均 `processingState=VALID`，`usesNonExemptEncryption=False`。
 - artifact `ios-ipa-release` 可下载。
 - **新 build 已关联 Internal Testers 组**（`GET /v1/betaGroups/75580122-d316-4fe7-b0ed-e7260df916b5/builds` 可查），tester `richardchung_0907@hotmail.com` 状态 `INSTALLED`。
 
 ## TestFlight 分发（✅ 2026-08-24 配置 Internal Testing；2026-08-25 新 build 关联完成）
 
-- **组**：`Internal Testers`（id `75580122-d316-4fe7-b0ed-e7260df916b5`，`isInternalGroup=true`）；已关联 build `83b9bc34`（v1）、`5c3c24ce`（v2）、`d18bd2c8`（v3）；tester `richardchung_0907@hotmail.com`（Richard Chung，id `131764c4-f957-490e-b4e8-2b4f1cfaf27d`）在组内，状态 `INSTALLED`（TestFlight 会自动向已装用户推送新 build 更新）。
+- **组**：`Internal Testers`（id `75580122-d316-4fe7-b0ed-e7260df916b5`，`isInternalGroup=true`）；已关联 build `83b9bc34`（v1）、`5c3c24ce`（v2）、`d18bd2c8`（v3）、`ee42be04`（v4）；tester `richardchung_0907@hotmail.com`（Richard Chung，id `131764c4-f957-490e-b4e8-2b4f1cfaf27d`）在组内，状态 `INSTALLED`（TestFlight 会自动向已装用户推送新 build 更新）。
 
 ### 新 build 关联组 SOP（每次上传后必做）
 
@@ -144,6 +145,7 @@ python scripts/appstore/_query_builds.py
        expect=(204, 200))   # expect 只放 204/200，避免默认含 409 静默吞掉、打印真实状态码
    ```
    **注意 `make_token()` 无参数**：直接 `api()` 内部自动调用，**不要** `make_token(keys)` 自己传参（会 `TypeError: make_token() takes 0 positional arguments but 1 was given`）。
+   **注意 `api()` 返回值是 `requests.Response` 对象**（不是 `(code, data)` 元组）：用 `r.status_code` / `r.json()` 取结果；状态码不在 `expect` 里会 raise `RuntimeError`。2026-08-27 晚场实测 v4 关联 204 成功（脚本写 `code, data = api(...)` 会 `ValueError: not enough values to unpack`）。
 3. 验证：`GET /v1/betaGroups/{id}/builds`（组侧端点，能看到关联的新旧 build）。
 4. ASC API 偶发读超时（`requests` timeout=60 抛 `ReadTimeout`，429/5xx 之外不重试）——遇到重跑一次即可。
 
