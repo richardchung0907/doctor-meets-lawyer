@@ -92,6 +92,15 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   const [blocked, setBlocked] = useState<boolean>(false);
 
   const flatListRef = useRef<FlatList>(null);
+  const isFirstRender = useRef(true);
+
+  const scrollToBottom = useCallback((animated = true) => {
+    // setTimeout 确保在 ScrollView 内容布局稳定后再滚动，
+    // 避免 VirtualizedList 分批渲染时 contentSize 尚未最终确定
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated });
+    }, 50);
+  }, []);
 
   const fetchMessages = async () => {
     try {
@@ -285,7 +294,14 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            onLayout={() => {
+              // 首次布局完成后立刻定位到底部，无动画以消除时序偏差
+              if (isFirstRender.current) {
+                isFirstRender.current = false;
+                scrollToBottom(false);
+              }
+            }}
+            onContentSizeChange={() => scrollToBottom(true)}
             renderItem={({ item }) => {
               const isMine = item.sender_id === user?.id;
 

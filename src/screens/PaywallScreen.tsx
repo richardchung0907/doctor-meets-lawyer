@@ -71,7 +71,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ onBack }) => {
     }
   };
 
-  const priceLabel = pkg?.product?.localizedPriceString ?? '';
+  const priceLabel = pkg?.product?.priceString ?? '';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,7 +139,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ onBack }) => {
             <TouchableOpacity
               style={[styles.upgradeButton, (busy || !pkg || loading) && styles.buttonDisabled]}
               onPress={handlePurchase}
-              disabled={busy || !pkg || loading}
+              disabled={!!busy || !pkg || loading}
               activeOpacity={0.85}
             >
               {busy === 'purchase' ? (

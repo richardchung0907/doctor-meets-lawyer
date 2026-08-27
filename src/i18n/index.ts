@@ -19,7 +19,11 @@ export const detectSystemLanguage = (): SupportedLanguage => {
     if (!primaryLocale) return 'en';
 
     const languageCode = (primaryLocale.languageCode || '').toLowerCase();
-    const scriptCode = (primaryLocale.scriptCode || '').toLowerCase();
+    // expo-localization 的 Locale 类型未声明 scriptCode，但 BCP 47 languageTag
+    // （如 zh-Hant-TW / zh-Hans-CN）第二位即 4 字母的 script 段，直接解析，
+    // 避免依赖未在类型中声明的原生字段（web 端也兼容）。
+    const tagParts = (primaryLocale.languageTag || '').split('-');
+    const scriptCode = (tagParts[1] && tagParts[1].length === 4 ? tagParts[1] : '').toLowerCase();
     const regionCode = (primaryLocale.regionCode || '').toLowerCase();
     const fullTag = (primaryLocale.languageTag || '').toLowerCase();
 

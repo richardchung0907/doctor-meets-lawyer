@@ -2,11 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
 
+// 数据库凭据不硬编码进仓库：密码从环境变量读取，缺省时报错退出
+// 用法示例（Windows PowerShell）：
+//   $env:SUPABASE_DB_PASSWORD='<密码>'; node scripts/apply_migration.js
+const DB_PASSWORD = process.env.SUPABASE_DB_PASSWORD;
+if (!DB_PASSWORD) {
+  console.error('FATAL: 环境变量 SUPABASE_DB_PASSWORD 未设置，无法连接数据库。');
+  console.error('  设置方式（PowerShell）：$env:SUPABASE_DB_PASSWORD="<密码>" 再运行本脚本。');
+  process.exit(1);
+}
+
 const client = new Client({
   host: 'aws-0-ap-southeast-1.pooler.supabase.com',
   port: 6543,
   user: 'postgres.xxtmeuabohgvcqzyphtx',
-  password: 'SUPABASE_DB_PASSWORD_FROM_ENV',
+  password: DB_PASSWORD,
   database: 'postgres',
   ssl: { rejectUnauthorized: false }
 });

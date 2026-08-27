@@ -9,7 +9,7 @@
 //  - 当前为 Test Store 的 SDK key（stest_...），与后台 app8233ce453d 对应；
 //  - 真实商店连接后，按平台替换（iOS app_store 的 SDK key / Android play_store 的 SDK key）。
 
-import Purchases, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import Purchases, { CustomerInfo, CustomerInfoUpdateListener, PurchasesPackage } from 'react-native-purchases';
 
 const REVENUECAT_API_KEY = 'stest_eLwYRfBydxpfFADAlZDcbyWfYAM';
 
@@ -105,7 +105,8 @@ export async function purchasePremiumPackage(pkg: PurchasesPackage): Promise<Cus
 export async function restorePremiumPurchase(): Promise<CustomerInfo | null> {
   if (!(await ensurePurchasesConfigured())) return null;
   try {
-    const { customerInfo } = await Purchases.restorePurchases();
+    // v8 的 restorePurchases 直接返回 CustomerInfo（非包裹对象）
+    const customerInfo = await Purchases.restorePurchases();
     return customerInfo;
   } catch (err) {
     console.warn('[purchases] restore failed', err);
@@ -118,8 +119,11 @@ export async function restorePremiumPurchase(): Promise<CustomerInfo | null> {
  * 调用方（AuthContext）负责把结果合入 isPremium 状态。
  */
 export function addPremiumListener(onUpdate: (isPremium: boolean) => void): () => void {
-  const sub = Purchases.addCustomerInfoUpdateListener((info: CustomerInfo) => {
+  // v8 的 addCustomerInfoUpdateListener 返回 void，移除需持引用调
+  // removeCustomerInfoUpdateListener（旧写法 sub.remove() 会抛错且不生效）
+  const listener: CustomerInfoUpdateListener = (info: CustomerInfo) => {
     onUpdate(isPremiumFromCustomerInfo(info));
-  });
-  return () => sub.remove();
+  };
+  Purchases.addCustomerInfoUpdateListener(listener);
+  return () => Purchases.removeCustomerInfoUpdateListener(listener);
 }
