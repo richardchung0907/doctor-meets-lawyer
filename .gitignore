@@ -5,10 +5,8 @@ supabase keys.txt
 *.env.*
 
 # Local Scripts & Build Automation Tools
-*.py
-scripts/ci_emulator_runner.py
-scripts/apply_migration.js
-scripts/mount_emulator.py
+# 正式脚本进版本库；仅忽略下划线开头的一次性/调试脚本
+**/_*.py
 
 # iOS signing & App Store release assets (sensitive, local-only)
 ios-signing/
@@ -60,4 +58,3 @@ __pycache__/
 
 # AI Agent
 .codewhale/
-skills/
