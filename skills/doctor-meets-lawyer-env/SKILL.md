@@ -155,6 +155,7 @@ invocation: model+user
 - **坑 2**：`replyPollSeconds` 设太小（< 2 秒）会高频查询数据库（每角色每 2 秒查 conversations + messages），角色多时注意 Supabase 用量；`syncRealConversations` 已加 `changed` 标志，无变化不写盘。
 - **重复回复同一私讯（已修，2026-08-26）**：竞态——timer 触发时 `replyTimers.delete` 执行、但 `actionReplyReal` 仍在进行（LLM 耗时数秒），期间 poller 每 5 秒扫描发现该会话无定时器且 `lastRepliedTs` 未推进 → 重复排定新 timer → 同一私讯被回多次（实测：`reply_real` 事件 09:20:58 / 09:22:25 / 09:22:42 各与上一条 incoming 相同）。**修复双重防线**：① `replyingSet` 标记正在回覆中的会话，`scheduleReply` 看到即跳过；② timer 触发时重新 `findPendingIncoming`，若 `fresh` 为空（已被其他路径回覆）则放弃。stop/pause 时 `replyingSet` 一并清空。
 - **最新私讯滞留（已修，2026-08-26）**：`replyingSet` 期间 poller 跳过安排，回复完成后 `replyingSet.delete` 到 poller 下一次运行之间有 5 秒窗口，用户恰在此时发的最新私讯会滞留 5 秒才被检测。**修复**：`actionReplyReal` 的 `finally` 块中，在 `replyingSet.delete` 后立即 `findPendingIncoming(role, conv)` 检查该会话是否有新消息，有则立即 `scheduleReply`（不等 poller 下一轮）。同时回复失败（LLM 调用异常）也会由此自动重试安排，不再需要等待 poller。
+- **回复重复自己历史（已修，2026-08-27）**：`deepseek-v4-flash` 在追问场景会照抄自己之前说过的话——实测用户708 会话对「大概幾多，有冇40,000？」和「講唔講 / 唔講就bye」两次回复一字不差（「你咁緊張我人工，不如緊張下煲湯火候啦…」）。**修复（三层）**：① `genMessage` prompt 加「嚴禁重複自己之前已說過的話，必須用全新句子」；② `fetchHistory` 从 10 条增至 15 条，让模型看到更多自己的历史发言；③ **后处理重复检测**：新增 `isNearDuplicate`（最长公共子串 ≥ min(12, 历史句长×50%) 或完全相等即判重复），`actionReplyReal` 提取该会话 bot 自己的历史发言传入 `genMessage`，生成后检测到重复则**重新生成一次**（prompt 提示「上一句與歷史重複，請換全新講法」）。单测验证：完全相等/轻微改动判重复、换说法放行。
 
 ## 当前状态快照（2026-08-18）
 
