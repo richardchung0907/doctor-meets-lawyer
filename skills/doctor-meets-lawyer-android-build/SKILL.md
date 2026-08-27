@@ -13,6 +13,7 @@ invocation: model+user
 ## 30 秒速览（现状）
 
 - CI：`.github/workflows/build-android.yml`（name: `Build Android APK`），触发方式 = `push`（main/master）+ `workflow_dispatch`；产物 artifact 名 **`app-release-apk`**。
+- **✅ 2026-08-27 再次验证**：run `#33039600450`（push master 触发）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS（同 HEAD）并行构建一次搞定。
 - 构建步骤：`npm install --legacy-peer-deps` → `npx expo prebuild --platform android` → `cd android && ./gradlew assembleRelease --no-daemon` → `upload-artifact`（`android/**/*.apk`）。**完整构建约 10 分钟**。
 - **现成脚本（已可用）**：`python scripts/gh_build_download.py`——自动 commit+push 最新修改 → dispatch → 每 2 分钟轮询 → 下载 APK 到 `build_downloads/app/`。别重复造轮子。
 - 产物落点：`build_downloads/app/app-release.apk`（约 62 MB）；`scripts/mount_emulator.py` 递归扫 `build_downloads/**/*.apk` 按**修改时间最新**安装，放子目录即可被识别。
@@ -55,6 +56,7 @@ invocation: model+user
 - 跑命令时再加 `$env:PYTHONIOENCODING='utf-8'` 双保险。
 
 ### 6. PowerShell 5.1 引号转义地狱（写/调脚本时）
+- **`&&` 不是合法语句分隔符**（PS 5.1 不支持，PS 7+ 才有）——多条命令用**分号** `;` 串，否则直接 ParserError：`The token '&&' is not a valid statement separator`（2026-08-27 实测）。
 - **反引号才是 PS 转义符**，`\$` 在双引号里不是转义（会把字面 `\$` 传给 node/python）。
 - 单引号字符串传给原生程序时，内部双引号会被 PS 5.1 剥离破坏（`node -e "...'{\"a\":1}'..."` 会炸）。
 - **结论：复杂内联 JS/Python/JSON 一律用 write 工具写临时文件再执行，不要用 `node -e` / 大段内联**。
@@ -86,6 +88,12 @@ invocation: model+user
 - **现象**：Android + iOS 同时 dispatch（同一 HEAD → 同一 `head_sha`），`gh_build_download.py` 的 `find_run` 按 head_sha 匹配 run，会抓到**先创建的那个**（通常先是 dispatch 的 iOS run）。若该 iOS run 失败，脚本会把它当成 Android 构建报错退出（`[ERROR] 构建失败（failure）`），**APK 没下载**。
 - **解法**：dispatch 返回的 `workflow_run_id` 才是**该 workflow 自己的 run**——Android 用 `python scripts/gh_build_download.py --run-id <该 id>` 只下载模式接续（不重新构建，直接查 artifact 下载）。
 - **教训**：同一 HEAD 并行多 workflow 时，run 定位必须用 dispatch 返回值 / 显式 `--run-id`，不要依赖按 head_sha/名字猜（`GET runs` 列表里的同名历史 run 会干扰）。
+- **2026-08-27 实测 SOP（双平台并行一次成功，全程非交互）**：
+  1. 先 `git commit` + `git push origin HEAD:master`——**push 即触发 Android workflow**，不要再用 `gh_build_download.py` 的 step_push_and_dispatch（它会再 dispatch 一次，双触发无必要）。
+  2. 紧接着 REST dispatch iOS：`POST .../actions/workflows/build-ios.yml/dispatches` body `{"ref":"master"}` → 返回 `200` + body 里 `workflow_run_id`（这是 **iOS** 的 run）。
+  3. 写临时 Python 脚本循环 `GET /actions/runs?branch=master&per_page=20`，**按 `run.path` 过滤**（`endswith('build-android.yml')` / `endswith('build-ios.yml')`）拿两个 run id 写 JSON——同 HEAD 两个 run 的 `head_sha` 相同，**只有 `path` 能区分**，别用 head_sha 匹配。
+  4. 各自接续：Android `python scripts/gh_build_download.py --run-id <android_run_id>`（只下载模式，run 完成后直接拉 artifact）；iOS `python scripts/gh_build_ios.py --run-id <ios_run_id> --interval 120 --timeout 90`。
+- **并行轮询（平台经验，2026-08-27）**：两个带写权限的子 agent 同时启动会**写作用域冲突**（第二个 spawn 失败）；轮询/下载类任务用**只读子 agent（scout）**或主 agent 直接轮询即可。子 agent 也可能中途被取消，重要进度主 agent 自己盯。
 
 ## 成功路径速查
 
@@ -95,8 +103,9 @@ $env:PYTHONIOENCODING='utf-8'; python scripts/gh_build_download.py --interval 12
 # 只下载某次已成功的 run（不重新构建）
 python scripts/gh_build_download.py --run-id <RUN_ID>
 
-# 并行双平台构建（同一 HEAD）：分别 dispatch，各自用返回的 workflow_run_id 接续
+# 并行双平台构建（同一 HEAD）：push 触发 Android + dispatch 触发 iOS，各自按 path 定位 run id 接续
 #   触发 iOS 用 workflow_dispatch（见 ios-build skill 坑 9，旧 tag 会构建旧代码）
+#   Android run 定位：GET /actions/runs?branch=master 后按 run.path == build-android.yml 过滤
 python scripts/gh_build_download.py --run-id <ANDROID_RUN_ID>
 python scripts/gh_build_ios.py --run-id <IOS_RUN_ID> --interval 120 --timeout 90
 
