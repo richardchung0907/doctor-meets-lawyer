@@ -81,7 +81,12 @@ Deno.serve(async (req) => {
         title: sender?.username || 'New message',
         body: (msg.content ?? '').slice(0, 150),
         sound: 'default',
-        channelId: 'messages', // Android：走客户端创建的高重要度渠道（锁屏显示 + 响铃）
+        // Android 兼容：
+        //  - API 26+（Android 8+）：channelId 主导显示（高重要度渠道，锁屏 + 响铃 + head-up）
+        //  - API < 26（Android 7.x，无渠道概念）：priority: 'high' 让通知 head-up 横幅 + 锁屏醒目
+        //    （否则 FCM NORMAL → PRIORITY_DEFAULT，不弹横幅、锁屏不醒目）
+        priority: 'high',
+        channelId: 'messages',
         data: { conversation_id: msg.conversation_id },
       }),
     });
