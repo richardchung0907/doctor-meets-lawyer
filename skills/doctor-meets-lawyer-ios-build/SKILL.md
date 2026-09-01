@@ -10,12 +10,13 @@ invocation: model+user
 
 需要把最新 App 代码编译成 iOS IPA 并推到 TestFlight 供用户测试（或排查 `build-ios.yml` 构建失败）时，**先读本节**。App Store 上架/ASC 后台配置见 `doctor-meets-lawyer-ios-release`；Android 侧对称手册见 `doctor-meets-lawyer-android-build`。
 
-## 30 秒速览（现状 2026-08-27 早晚场四次构建成功 ✅）
+## 30 秒速览（现状 2026-09-01 五次构建成功 ✅）
 
 - **✅ 已打通（2026-08-24）**：run `#32743132331`（dispatch，14 分钟）17 步骤全绿，IPA 已上传 TestFlight，ASC build id `83b9bc34-b911-43d6-b9cd-411ca50e1f8b`（version 1，`processingState=VALID`，`usesNonExemptEncryption=False`）。
 - **✅ 二次构建（2026-08-25）**：run `#32801673563`（dispatch，12 分钟）全绿，ASC build `5c3c24ce-12b7-4275-ae79-90a50c642920`（version **2**，VALID），**已关联 Internal Testers 组**（详见文末）。途中踩了 bundle version 冲突坑（坑 8）——同 version 每次上传必须递增 `ios.buildNumber`。
 - **✅ 三次构建（2026-08-27 早场）**：run `#33039619292`（dispatch，成功）job 全绿，ASC build `d18bd2c8-8882-412a-bacc-8528b96ceb47`（version **3**，VALID），**已关联 Internal Testers 组**。与 Android 同 HEAD 并行构建，run 定位用按 `path` 过滤（见 android-build skill 坑 10）。
 - **✅ 四次构建（2026-08-27 晚场）**：run `#33055704629`（dispatch，约 6 分钟）job 全绿，ASC build `ee42be04-f2bf-45bc-ac6b-f2ce2e2f1be4`（version **4**，VALID），**已关联 Internal Testers 组**（组内现有 v1/v2/v3/v4 四个 build）。流程：先 commit（`app.json` `ios.buildNumber` 3→4）→ push master 触发 Android → 紧接着 dispatch iOS，与 Android 并行构建一次搞定。
+- **✅ 五次构建（2026-09-01）**：run `#33488031749`（dispatch，约 16 分钟）job 全绿，ASC build `0d19a7c0-7e0f-4a3f-b5e2-c7699b379c4b`（version **5**，VALID），**已关联 Internal Testers 组**。途中踩了 JS bundle 重复 import 坑（坑 10，ChatRoomScreen.tsx 重复 import 导致双平台首次编译失败，修复后重跑成功）。流程：commit（ios.buildNumber 4→5 + 验证功能代码）→ push master 触发 Android + dispatch iOS → 首次构建失败 → 修复重复 import 后重跑 → 成功。
 - CI：`.github/workflows/build-ios.yml`（name: `Build iOS App`）。触发 = **push tag `v*-ios`** + **`workflow_dispatch`**。链路：`npm install` → `expo prebuild` → `pod install` → **强制 Pods Swift 5 + patch expo-localization** → 签名 → `xcodebuild archive`（`SWIFT_VERSION=5.0`）→ `export IPA` → `upload-artifact`（`ios-ipa-release`）→ `Apple-Actions/upload-testflight-build@v1` 上传。
 - **现成脚本**：
   - `python scripts/gh_build_ios.py` —— 非交互触发 + 轮询（push master → dispatch/打 tag → 轮询 → 报告 job 与失败步骤；`--run-id` 接续轮询，`--interval 120` = 每 2 分钟）。
@@ -116,22 +117,33 @@ python scripts/appstore/_query_builds.py
 - 现象（2026-08-25 run `#32800911386`）：编译/签名/导出/artifact **全部成功**（12 分钟），仅 `Upload to TestFlight` 步失败：`The provided entity includes an attribute with a value that has already been used (-19232) The bundle version must be higher than the previously uploaded version: '1'.`（`altool` ExitFailure 31）。
 - **根因**：Expo prebuild 把 `ios.buildNumber`（**默认 `'1'`**，见 `node_modules/@expo/config-plugins/build/ios/Version.js` 的 `getBuildNumber`）**字面写入** Info.plist 的 `CFBundleVersion`；workflow archive 命令里的 `CURRENT_PROJECT_VERSION=${{ github.run_number }}` **从未生效**（Info.plist 是字面值，不是 `$(CURRENT_PROJECT_VERSION)` 引用）。第一次上传（v1）成功只因无历史版本；第二次同值上传必撞。
 - **解法**：`app.json` 显式递增 `ios.buildNumber`（1→2，commit `5fcc8fe`）→ commit + push → 重新 dispatch。
-- **规则**：**同 `expo.version` 下每次新 TestFlight build 都要递增 `ios.buildNumber`**（已用过 1、2、3、**4**（2026-08-27 晚场 v4），下次用 **5**；升级 `version` 后可重置）。改 `app.json` 后 push master 会**额外触发一次 Android 构建**（build-android.yml 监听 push master），产物内容不变，忽略即可——若本来就要发 Android，则正好一次 push 同时满足两侧。
+- **规则**：**同 `expo.version` 下每次新 TestFlight build 都要递增 `ios.buildNumber`**（已用过 1、2、3、4、**5**（2026-09-01 v5），下次用 **6**；升级 `version` 后可重置）。改 `app.json` 后 push master 会**额外触发一次 Android 构建**（build-android.yml 监听 push master），产物内容不变，忽略即可——若本来就要发 Android，则正好一次 push 同时满足两侧。
 
 ### 坑 9（✅ 已绕过）：旧 tag 不能触发新构建（复用会构建旧代码）
 - 现象：`v1.0.0-ios` tag 已存在并指向**旧 commit**；`gh_build_ios.py` 的 tag 模式（`step_push_and_tag`）发现本地/远程已有同名 tag 会**复用**，push tag 触发的 build-ios.yml 构建的是**旧代码**（或远程已有同名 tag 时直接跳过不触发）。
 - 解法：新构建一律 **`workflow_dispatch`**（构建 master 最新 HEAD），不要依赖旧 tag；如需 tag 触发就起**新名字**（如 v1.0.1-ios）。2026-08-25 实测：旧 tag 场景下 dispatch 是最稳路径。
 
-## 验证清单（2026-08-24 / 2026-08-25 / 2026-08-27 早晚场共四次全绿）
+### 坑 10（2026-09-01 新踩）：JS bundle 重复 import 导致双平台编译同时失败
+- 现象：本次首次构建 **Android（Gradle `createBundleReleaseJsAndAssets`）和 iOS（xcodebuild `Archive`）双双失败**，失败点都在 JS bundle 打包阶段，与签名/证书/版本号无关。日志里只有一条关键错误：
+  ```
+  SyntaxError: /home/runner/work/.../src/screens/ChatRoomScreen.tsx:
+  Identifier 'truncateByWidth' has already been declared. (21:9)
+  ```
+- 根因：**ChatRoomScreen.tsx 第 20、21 行是完全相同的重复 import**（`import { truncateByWidth, ... } from '../lib/textLimit';` 出现两次）——Metro/Babel 把第二次当成同名 identifier 重复声明直接拒绝，bundle 失败。
+- 排障路径（双平台通用）：`python scripts/appstore/_debug_ios_logs.py <run_id> --errors` 拿 job 日志 → grep 定位第一条 `SyntaxError` 与文件行号 → 本地 `Select-String -Path <file> -Pattern '<identifier>'` 找重复声明。
+- 解法：删除重复的 import 行后 `git commit` + `git push`（触发 Android）+ 重新 `workflow_dispatch` iOS，一次成功。
+- 教训：**JS 源码级错误（重复 import / 未定义的 identifier / 语法错）会同时击垮两个平台的构建**，失败先查 JS bundle 层，别在签名/证书上浪费时间。构建前在本地快速 grep 疑似重复的 import 行（`Select-String` 或 IDE 提示）。
+
+## 验证清单（2026-08-24 / 2026-08-25 / 2026-08-27 早晚场 / 2026-09-01 共五次全绿）
 
 - dispatch 200（返回 `workflow_run_id`）；run `conclusion == success`；17 步骤全绿（含 **Upload to TestFlight**）。
-- ASC：`GET /v1/builds?filter[app]=6804181628` → build `83b9bc34...`（v1）+ `5c3c24ce...`（v2）+ `d18bd2c8...`（v3）+ `ee42be04...`（v4）均 `processingState=VALID`，`usesNonExemptEncryption=False`。
+- ASC：`GET /v1/builds?filter[app]=6804181628` → build `83b9bc34...`（v1）+ `5c3c24ce...`（v2）+ `d18bd2c8...`（v3）+ `ee42be04...`（v4）+ `0d19a7c0...`（v5）均 `processingState=VALID`，`usesNonExemptEncryption=False`。
 - artifact `ios-ipa-release` 可下载。
 - **新 build 已关联 Internal Testers 组**（`GET /v1/betaGroups/75580122-d316-4fe7-b0ed-e7260df916b5/builds` 可查），tester `richardchung_0907@hotmail.com` 状态 `INSTALLED`。
 
-## TestFlight 分发（✅ 2026-08-24 配置 Internal Testing；2026-08-25 新 build 关联完成）
+## TestFlight 分发（✅ 2026-08-24 配置 Internal Testing；2026-08-25/27/09-01 新 build 关联完成）
 
-- **组**：`Internal Testers`（id `75580122-d316-4fe7-b0ed-e7260df916b5`，`isInternalGroup=true`）；已关联 build `83b9bc34`（v1）、`5c3c24ce`（v2）、`d18bd2c8`（v3）、`ee42be04`（v4）；tester `richardchung_0907@hotmail.com`（Richard Chung，id `131764c4-f957-490e-b4e8-2b4f1cfaf27d`）在组内，状态 `INSTALLED`（TestFlight 会自动向已装用户推送新 build 更新）。
+- **组**：`Internal Testers`（id `75580122-d316-4fe7-b0ed-e7260df916b5`，`isInternalGroup=true`）；已关联 build `83b9bc34`（v1）、`5c3c24ce`（v2）、`d18bd2c8`（v3）、`ee42be04`（v4）、`0d19a7c0`（v5）；tester `richardchung_0907@hotmail.com`（Richard Chung，id `131764c4-f957-490e-b4e8-2b4f1cfaf27d`）在组内，状态 `INSTALLED`（TestFlight 会自动向已装用户推送新 build 更新）。
 
 ### 新 build 关联组 SOP（每次上传后必做）
 
@@ -155,6 +167,7 @@ python scripts/appstore/_query_builds.py
 2. **409 `Tester(s) cannot be assigned`**：该邮箱曾作为对方 App（RICHY，app `6792005935`）的 tester（旧 id `6fd7543d`，在对方 Internal 组 `Ka chai internal`）存在，跨 app 共享的 tester 记录无法再分配到新 Internal 组——**DELETE 旧 betaTester 后重建即可**（删除不影响对方 app 的 build/组结构，只移除 tester 引用）。
 3. **`setup_appstore.py` 的 `api()` expect 含 409**：会静默吞掉 409 当作成功（脚本没报错但操作实际失败）。**涉及 betaTester/betaGroup 的调用务必打印真实状态码**，或用 `requests` 直接调。
 4. 验证用组侧端点：`GET /v1/betaGroups/{id}/betaTesters`、`GET /v1/betaGroups/{id}/builds`（`builds/{id}/relationships/betaGroups` 只允许 CREATE/DELETE，GET 403）。
+5. **ASC token 模块级缓存过期（401）**：`setup_appstore.py` 的 `api()` 把 `TOKEN` 缓存为模块全局变量（`if TOKEN is None: TOKEN = make_token()`），token 有效期 1200 秒（20 分钟）。**单个 Python 进程内多次调用 `api()` 且总时长超过 20 分钟时**，token 过期会 401 NOT_AUTHORIZED。解法：调用前重置 `setup_appstore.TOKEN = None` 强制生成新 token（即使新进程 TOKEN 初始为 None，写入此保险更稳妥）。排障：`from setup_appstore import api` 后 401 → 先 `import setup_appstore; setup_appstore.TOKEN = None` 再 `api(...)` 重试，通常立即恢复。
 
 ## 关联
 

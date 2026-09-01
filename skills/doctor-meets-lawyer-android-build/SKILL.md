@@ -15,6 +15,7 @@ invocation: model+user
 - CI：`.github/workflows/build-android.yml`（name: `Build Android APK`），触发方式 = `push`（main/master）+ `workflow_dispatch`；产物 artifact 名 **`app-release-apk`**。
 - **✅ 2026-08-27 早场**：run `#33039600450`（push master 触发）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS（同 HEAD）并行构建一次搞定。
 - **✅ 2026-08-27 晚场（v4）**：run `#33055680824`（push master 触发，commit `2a0719b`）成功，APK 63.1 MB 下载到 `build_downloads/app/app-release.apk`，与 iOS 并行构建一次搞定（构建约 10 分钟）。
+- **✅ 2026-09-01**：run `#33487992413`（push master 触发，commit `89ea089`）成功，APK **63.5 MB** 下载到 `build_downloads/app/app-release.apk`（`50 4B 03 04` 魔数验证通过），与 iOS 并行构建一次搞定（构建约 10 分钟）。**首次构建因 JS bundle 重复 import 失败（坑 11），修复后重跑成功**。
 - 构建步骤：`npm install --legacy-peer-deps` → `npx expo prebuild --platform android` → `cd android && ./gradlew assembleRelease --no-daemon` → `upload-artifact`（`android/**/*.apk`）。**完整构建约 10 分钟**。
 - **现成脚本（已可用）**：`python scripts/gh_build_download.py`——自动 commit+push 最新修改 → dispatch → 每 2 分钟轮询 → 下载 APK 到 `build_downloads/app/`。别重复造轮子。
 - 产物落点：`build_downloads/app/app-release.apk`（约 62 MB）；`scripts/mount_emulator.py` 递归扫 `build_downloads/**/*.apk` 按**修改时间最新**安装，放子目录即可被识别。
@@ -35,6 +36,7 @@ invocation: model+user
 - PAT 在 `keys.txt`（`Github key:github_pat_...`，fine-grained）。读取用正则 `github_pat_[A-Za-z0-9_]+`。
 - **git remote 的 URL 已内嵌 token**（`https://github_pat_...@github.com/richardchung0907/doctor-meets-lawyer.git`）——直接 `git push origin HEAD:master` 即非交互，不要重新配 credential。
 - 工作区修改（含 metro 热重载保存的文件）由脚本 `git add -A` 自动提交推送；`.gitignore` 已保护 `scripts/sim/`、`build_downloads/`、`scripts/*.py` 等本机内容，不会被误提交。
+- **2026-09-01 教训：`.gitignore` 只忽略 `**/_*.py`，临时调试文件若用 `.txt`/其他后缀（如 `scripts/_peek1.txt`）会被 `git add -A` 误提交**——排障产生的临时文件一律用 `_*.py` 命名（自动被忽略）或放 `build_downloads/`，已误提交的 `git rm` 删除后 push 即可（会多触发一次 Android 构建，产物不变可忽略）。
 
 ### 3. artifact 下载 —— 2026 年 GitHub API 变更（最易踩的坑）
 - **旧 API 版本头 `X-GitHub-Api-Version: 2022-11-28` 下：`/zip` 返回 401、`/archive` 返回 404 —— 全废**。
@@ -95,6 +97,7 @@ invocation: model+user
   3. 写临时 Python 脚本循环 `GET /actions/runs?branch=master&per_page=20`，**按 `run.path` 过滤**（`endswith('build-android.yml')` / `endswith('build-ios.yml')`）拿两个 run id 写 JSON——同 HEAD 两个 run 的 `head_sha` 相同，**只有 `path` 能区分**，别用 head_sha 匹配。
   4. 各自接续：Android `python scripts/gh_build_download.py --run-id <android_run_id>`（只下载模式，run 完成后直接拉 artifact）；iOS `python scripts/gh_build_ios.py --run-id <ios_run_id> --interval 120 --timeout 90`。
 - **2026-08-27 晚场（v4）再次验证同套 SOP**：commit（含 `app.json` 的 `ios.buildNumber` 3→4）→ push master 触发 Android（run `33055680824`）→ dispatch iOS（返回 200 + `workflow_run_id`）→ 按 `run.path` 过滤拿到两个 run id → Android / iOS 并行接续，一次成功。
+- **2026-09-01（v5）三次验证同套 SOP + 首次踩 JS 源码坑**：commit（含 ios.buildNumber 4→5 + 验证功能代码）→ push master 触发 Android（run `33487992413`）→ dispatch iOS（run `33488031749`）→ 按 `run.path` 过滤拿两个 run id → **首轮双平台均失败（坑 11，JS bundle 重复 import）** → 修复代码重新 commit+push+dispatch → 重跑 run `33487992413`/`33488031749` 双绿。经验：**失败后重触发不是删旧 run，而是新 commit 推新 HEAD 重新 push/dispatch**；旧失败 run 留在历史里即可。
 - **关键：`gh_build_download.py --run-id` 是纯下载模式（跳过触发与轮询）**——run 未 `completed` 时直接跑会查不到 artifact。需要「先轮询指定 run 到 completed、再下载」时，写临时脚本 import 复用该脚本内部函数（避免重复造轮子）：
   ```python
   import importlib.util, sys
@@ -106,6 +109,21 @@ invocation: model+user
   ```
   （2026-08-27 晚场实测：Android run 10 分钟完成后下载 63.1 MB APK；复用 `gbd.gh`/`gbd.fmt_duration`/`gbd.download_artifact`。临时脚本用完即删，且 `scripts/*.py` 不入 git）。
 - **并行轮询（平台经验，2026-08-27）**：两个带写权限的子 agent 同时启动会**写作用域冲突**（第二个 spawn 失败）；轮询/下载类任务用**只读子 agent（scout）**或主 agent 直接轮询即可。子 agent 也可能中途被取消，重要进度主 agent 自己盯。
+- **轮询节奏**：构建约 10 分钟，`--interval 120`（2 分钟）合适，超时给 40 分钟；主 agent 自己轮询最稳（一次性 `python` 脚本里 `time.sleep(interval)` 循环，或用 skill 已有的 `gbd.gh`/`gbd.fmt_duration`/`gbd.download_artifact` 复用）。
+
+### 11. JS bundle 源码错误会同时击垮双平台构建（2026-09-01 实测，最重要）
+- **现象**：同一 HEAD 首轮构建 **Android Gradle `createBundleReleaseJsAndAssets` 和 iOS Archive 双双失败**。Android 侧关键日志（`_debug_ios_logs.py` 下载 job 日志定位）：
+  ```
+  SyntaxError: .../src/screens/ChatRoomScreen.tsx: Identifier 'truncateByWidth' has already been declared. (21:9)
+  FAILURE: Execution failed for task ':app:createBundleReleaseJsAndAssets'.
+  ```
+- **根因**：ChatRoomScreen.tsx **第 20、21 行是完全相同的重复 import**（`import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';` 出现两次）。Metro bundle 把第二次声明当 identifier 重复声明直接拒——**不是 Gradle/SDK 问题，是 JS 源码问题**。
+- **排障 SOP（Android 侧）**：`python scripts/appstore/_debug_ios_logs.py <run_id> --errors` → grep `SyntaxError` 拿文件+行号 → 本地 `Select-String -Path <file> -Pattern '<identifier>'` 确认重复声明行。注意 `_debug_ios_logs.py` 的 `fetch_logs` 返回 **bytes**，脚本内要 `dl.decode(raw)` 再 `splitlines()`（`can't use string pattern on bytes-like object` 报错就是这个）。
+- **解法**：删掉重复行 → `git commit` + `git push`（触发 Android）+ 重新 dispatch iOS → 双平台一次成功。
+- **教训**：
+  - **JS 层错误（重复 import / 语法错 / 未定义 identifier）100% 双平台同时挂**，失败先查 JS bundle 日志，别在证书/SDK 上浪费时间。
+  - 构建前本地快速检查：`git diff` 里 import 区是否重复；或用 IDE/tsc（本项目 tsc 有预存在错误但**重复 import 也会被 tsc 报出来**，见坑 8）。
+  - 失败→修复→重触发 = 新 commit 新 HEAD，不是对旧 run 重试。
 
 ## 成功路径速查
 
@@ -132,8 +150,9 @@ python scripts/mount_emulator.py
 
 - dispatch 返回 204 或 200（而非 401/403/404）；200 时 body 应含 `workflow_run_id`
 - run `conclusion == success`（失败看 `html_url`）
-- artifact zip 可下载且含 `.apk`；APK 魔数 `PK\x03\x04`
+- artifact zip 可下载且含 `.apk`；APK 魔数 `PK\x03\x04`（2026-09-01 实测 63.5 MB，前 4 字节 `50 4B 03 04`）
 - `git status` 干净（`build_downloads/`、`scripts/sim/` 保持未跟踪）
+- **iOS build 关联组**（同 HEAD 双平台时别忘了 iOS 侧：`_query_builds.py` 查最新 build → 关联 Internal Testers 组，见 ios-build skill）
 
 ## 推送（Android release APK）注意事项（2026-08-27）
 - 后台/锁屏系统通知链路：`messages` INSERT 触发器 -> pg_net -> Edge Function `notify` -> Expo Push API -> FCM -> 设备。
