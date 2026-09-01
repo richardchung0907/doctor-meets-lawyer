@@ -18,7 +18,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
 import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
-import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
 import { RealtimeStatus } from '../components/ConnectionStatusBanner';
 import { VerifiedBadge } from '../components/VerifiedBadge';
 import { theme } from '../theme';
