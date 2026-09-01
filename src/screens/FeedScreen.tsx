@@ -69,7 +69,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ onOpenChat, onOpenProfil
             username,
             profession,
             gender,
-            avatar_url
+            avatar_url,
+            verification_status
           )
         `)
         .eq('is_active', true)

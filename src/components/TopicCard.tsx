@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MessageSquare, Clock, UserMinus, UserCheck } from 'lucide-react-native';
 import { Topic, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from './ProfessionBadge';
+import { VerifiedBadge } from './VerifiedBadge';
 import { GenderAvatar } from './GenderAvatar';
 import { theme } from '../theme';
 import { blockUser, unblockUser, isBlockedByMe } from '../lib/blocklist';
@@ -132,7 +133,10 @@ export const TopicCard: React.FC<TopicCardProps> = ({
           </View>
         </View>
 
-        <ProfessionBadge profession={authorProfession} size="small" />
+        <View style={styles.badgeRow}>
+          <ProfessionBadge profession={authorProfession} size="small" />
+          <VerifiedBadge status={topic.profiles?.verification_status} size="small" />
+        </View>
       </View>
 
       {/* Content — 话题大厅强制最多 2 行，超出的在行末以 '...' 隐藏（自适应屏宽） */}
@@ -220,6 +224,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   timeText: {
     color: theme.colors.textFaint,

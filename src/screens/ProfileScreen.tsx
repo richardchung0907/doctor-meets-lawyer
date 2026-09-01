@@ -16,7 +16,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil, Crown, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, LogOut, Globe, Mail, Shield, Check, UserX, UserCheck, Pencil, Crown, ChevronRight, BadgeCheck, Camera, Image as ImageIcon, FileText } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ProfessionBadge } from '../components/ProfessionBadge';
@@ -25,6 +25,10 @@ import { LanguageSelector } from '../components/LanguageSelector';
 import { SupportedLanguage, setAppLanguage } from '../i18n';
 import { theme } from '../theme';
 import { BlockedEntry, fetchMyBlocklist, unblockUser } from '../lib/blocklist';
+import { VerifiedBadge } from '../components/VerifiedBadge';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { submitVerificationRequest } from '../lib/verification';
 
 interface ProfileScreenProps {
   onBack: () => void;
@@ -46,6 +50,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
   const [bioModalVisible, setBioModalVisible] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
   const [bioSaving, setBioSaving] = useState(false);
+
+  // 专业身份认证
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyFile, setVerifyFile] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+    size?: number;
+  } | null>(null);
+  const [verifyNote, setVerifyNote] = useState('');
+  const [verifySubmitting, setVerifySubmitting] = useState(false);
+
+  const verificationStatus =
+    (profile?.verification_status as string | undefined) ?? 'unverified';
 
   const handleLogout = async () => {
     setConfirmLogoutModal(false);
@@ -103,6 +121,86 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
     await refreshProfile();
   };
 
+  // ---- 专业身份认证 ----
+  const openVerifyModal = () => {
+    setVerifyFile(null);
+    setVerifyNote('');
+    setVerifyModalVisible(true);
+  };
+
+  const pickFromCamera = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(t('verification.verify_title'), t('profile.camera_denied'));
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      const a = result.assets[0];
+      setVerifyFile({
+        uri: a.uri,
+        name: a.fileName ?? `photo_${Date.now()}.jpg`,
+        type: a.mimeType ?? 'image/jpeg',
+      });
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(t('verification.verify_title'), t('profile.gallery_denied'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      const a = result.assets[0];
+      setVerifyFile({
+        uri: a.uri,
+        name: a.fileName ?? `photo_${Date.now()}.jpg`,
+        type: a.mimeType ?? 'image/jpeg',
+      });
+    }
+  };
+
+  const pickDocument = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'image/jpeg', 'image/png'],
+      copyToCacheDirectory: true,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const a = result.assets[0];
+      setVerifyFile({
+        uri: a.uri,
+        name: a.name,
+        type: a.mimeType ?? 'application/octet-stream',
+        size: a.size,
+      });
+    }
+  };
+
+  const submitVerification = async () => {
+    if (!verifyFile || !user) return;
+    Keyboard.dismiss();
+    setVerifySubmitting(true);
+    const res = await submitVerificationRequest(verifyFile, verifyNote.trim());
+    setVerifySubmitting(false);
+    if (!res.ok) {
+      const msg = t(`verification.${res.error}`, { defaultValue: res.error ?? 'unknown' });
+      Alert.alert(t('verification.submit_fail_title'), msg);
+      return;
+    }
+    setVerifyModalVisible(false);
+    setVerifyFile(null);
+    setVerifyNote('');
+    Alert.alert(t('verification.submit_ok_title'), t('verification.submit_ok_message'));
+    await refreshProfile();
+  };
+
   // 挂载时即加载黑名单，保证入口处的数量始终正确
   useEffect(() => {
     loadBlocklist();
@@ -139,9 +237,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
 
           <Text style={styles.username}>{profile?.username || 'Professional User'}</Text>
 
-          {profile?.profession && (
-            <ProfessionBadge profession={profile.profession} size="large" />
-          )}
+          <View style={styles.professionRow}>
+            {profile?.profession && (
+              <ProfessionBadge profession={profile.profession} size="large" />
+            )}
+            {verificationStatus === 'verified' || verificationStatus === 'pending' ? (
+              <VerifiedBadge status={verificationStatus} size="medium" />
+            ) : (
+              <TouchableOpacity
+                style={styles.verifyBtn}
+                onPress={openVerifyModal}
+                activeOpacity={0.7}
+              >
+                <BadgeCheck size={14} color={theme.colors.primaryDark} />
+                <Text style={styles.verifyBtnText}>{t('verification.verify_btn')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <View style={styles.emailRow}>
             <Mail size={14} color={theme.colors.textFaint} />
@@ -355,6 +467,80 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onLoggedOu
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Verification Upload Modal */}
+      <Modal
+        visible={verifyModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVerifyModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} />
+          <View style={styles.verifyModalCard}>
+            <Text style={styles.modalTitle}>{t('verification.verify_title')}</Text>
+            <Text style={styles.verifySub}>{t('verification.verify_sub')}</Text>
+
+            <View style={styles.verifyPickRow}>
+              <TouchableOpacity style={styles.verifyPickBtn} onPress={pickFromCamera} activeOpacity={0.7}>
+                <Camera size={20} color={theme.colors.primaryDark} />
+                <Text style={styles.verifyPickText}>{t('verification.take_photo')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.verifyPickBtn} onPress={pickFromLibrary} activeOpacity={0.7}>
+                <ImageIcon size={20} color={theme.colors.primaryDark} />
+                <Text style={styles.verifyPickText}>{t('verification.choose_gallery')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.verifyPickBtn} onPress={pickDocument} activeOpacity={0.7}>
+                <FileText size={20} color={theme.colors.primaryDark} />
+                <Text style={styles.verifyPickText}>{t('verification.choose_file')}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {verifyFile && (
+              <View style={styles.verifyFileInfo}>
+                <Text style={styles.verifyFileName} numberOfLines={1}>
+                  {t('verification.file_picked', { name: verifyFile.name })}
+                </Text>
+              </View>
+            )}
+
+            <TextInput
+              style={styles.verifyNoteInput}
+              placeholder={t('verification.note_placeholder')}
+              placeholderTextColor={theme.colors.textFaint}
+              multiline
+              maxLength={500}
+              value={verifyNote}
+              onChangeText={setVerifyNote}
+            />
+
+            <View style={styles.bioModalActions}>
+              <TouchableOpacity
+                style={styles.bioCancelBtn}
+                onPress={() => setVerifyModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bioCancelText}>{t('feed.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.verifySubmitBtn, (!verifyFile || verifySubmitting) && styles.verifySubmitDisabled]}
+                onPress={submitVerification}
+                disabled={!verifyFile || verifySubmitting}
+                activeOpacity={0.8}
+              >
+                {verifySubmitting ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <Text style={styles.bioSaveText}>{t('verification.submit')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -410,6 +596,98 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
+  },
+  professionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  verifyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(2, 132, 199, 0.10)',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  verifyBtnText: {
+    color: theme.colors.primaryDark,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  verifyModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 20,
+    gap: 12,
+  },
+  verifySub: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  verifyPickRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  verifyPickBtn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: 12,
+  },
+  verifyPickText: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  verifyFileInfo: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 10,
+  },
+  verifyFileName: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  verifyNoteInput: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
+    padding: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontSize: 14,
+  },
+  verifySubmitBtn: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  verifySubmitDisabled: {
+    opacity: 0.5,
   },
   emailRow: {
     flexDirection: 'row',

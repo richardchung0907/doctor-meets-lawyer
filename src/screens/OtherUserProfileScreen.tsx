@@ -14,6 +14,7 @@ import { ArrowLeft, User, Calendar, UserMinus, UserCheck } from 'lucide-react-na
 import { supabase } from '../lib/supabase';
 import { Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { VerifiedBadge } from '../components/VerifiedBadge';
 import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 import { isBlockedWith, isBlockedByMe, blockUser, unblockUser } from '../lib/blocklist';
@@ -39,7 +40,7 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
       const [{ data, error }, blockActive, mine] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, username, profession, gender, age, avatar_url, bio, created_at')
+          .select('id, username, profession, gender, age, avatar_url, bio, created_at, verification_status')
           .eq('id', userId)
           .maybeSingle(),
         isBlockedWith(userId),
@@ -141,7 +142,10 @@ export const OtherUserProfileScreen: React.FC<OtherUserProfileScreenProps> = ({ 
             <Text style={styles.username}>{profile.username || 'Professional User'}</Text>
 
             {profile.profession && (
-              <ProfessionBadge profession={profile.profession as ProfessionKey} size="large" />
+              <View style={styles.professionRow}>
+                <ProfessionBadge profession={profile.profession as ProfessionKey} size="large" />
+                <VerifiedBadge status={profile.verification_status} size="medium" />
+              </View>
             )}
 
             {metaParts.length > 0 && (
@@ -263,6 +267,13 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
+  },
+  professionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   metaText: {
     color: theme.colors.textMuted,

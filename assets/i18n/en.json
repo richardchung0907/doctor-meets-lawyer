@@ -108,12 +108,36 @@
     "blocked_confirm_title": "Block User",
     "blocked_confirm_message": "Block this user? You won't see their topics and can't message each other until both sides unblock.",
     "unblocked_confirm_title": "Remove from Blocklist",
-    "unblocked_confirm_message": "Remove this user from your blocklist?"
+    "unblocked_confirm_message": "Remove this user from your blocklist?",
+    "camera_denied": "Camera access is required to take a photo of your certificate.",
+    "gallery_denied": "Photo library access is required to choose an image."
   },
   "nav": {
     "feed": "Topic Hall",
     "messages": "Chats",
     "profile": "Profile"
+  },
+  "verification": {
+    "verified": "Verified",
+    "pending": "Reviewing",
+    "unverified": "Unverified",
+    "verify_btn": "Verify",
+    "verify_title": "Professional Verification",
+    "verify_sub": "Upload a professional certificate or license to verify your identity.",
+    "choose_file": "Choose file",
+    "file_picked": "Selected: {{name}}",
+    "note_label": "Note (optional)",
+    "note_placeholder": "e.g. Medical license number, institution...",
+    "submit": "Submit",
+    "submit_ok_title": "Submitted",
+    "submit_ok_message": "Your verification request has been submitted for review.",
+    "submit_fail_title": "Submission failed",
+    "already_pending": "You already have a request under review.",
+    "file_too_large": "File too large (max 5MB)",
+    "file_type_error": "Unsupported file type",
+    "auth_required": "Please sign in first",
+    "take_photo": "Take Photo",
+    "choose_gallery": "Choose from Gallery"
   },
   "premium": {
     "title": "Premium Member",

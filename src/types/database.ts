@@ -20,6 +20,18 @@ export interface Profile {
   last_seen?: string | null;
   is_premium?: boolean;
   premium_expires_at?: string | null;
+  verification_status?: string; // 'unverified' | 'pending' | 'verified'
+}
+
+export interface VerificationRequest {
+  id: string;
+  user_id: string;
+  profession: ProfessionKey;
+  doc_path: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewer_note?: string | null;
+  created_at: string;
+  reviewed_at?: string | null;
 }
 
 export interface Topic {

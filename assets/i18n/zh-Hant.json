@@ -108,12 +108,36 @@
     "blocked_confirm_title": "加入黑名單",
     "blocked_confirm_message": "確定封鎖該用戶？此後雙方將互相看不到對方話題、無法互發訊息，且無法查看對方資料，直到雙方都解除。",
     "unblocked_confirm_title": "移出黑名單",
-    "unblocked_confirm_message": "確定將該用戶移出黑名單？"
+    "unblocked_confirm_message": "確定將該用戶移出黑名單？",
+    "camera_denied": "需要使用相機才能拍攝證書照片。",
+    "gallery_denied": "需要使用相簿才能選擇圖片。"
   },
   "nav": {
     "feed": "話題大廳",
     "messages": "私訊",
     "profile": "個人中心"
+  },
+  "verification": {
+    "verified": "已認證",
+    "pending": "審核中",
+    "unverified": "未認證",
+    "verify_btn": "認證",
+    "verify_title": "專業身份認證",
+    "verify_sub": "上傳專業資格證書或執照以驗證您的身份。",
+    "choose_file": "選擇檔案",
+    "file_picked": "已選擇：{{name}}",
+    "note_label": "備註（可選）",
+    "note_placeholder": "如：醫師執業證編號、所屬機構……",
+    "submit": "提交",
+    "submit_ok_title": "已提交",
+    "submit_ok_message": "您的認證申請已提交，等待審核。",
+    "submit_fail_title": "提交失敗",
+    "already_pending": "您已有申請正在審核中。",
+    "file_too_large": "檔案過大（最大 5MB）",
+    "file_type_error": "不支援的檔案類型",
+    "auth_required": "請先登入",
+    "take_photo": "拍照",
+    "choose_gallery": "從相簿選擇"
   },
   "premium": {
     "title": "高級會員",

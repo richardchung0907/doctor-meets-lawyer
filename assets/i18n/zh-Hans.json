@@ -108,12 +108,36 @@
     "blocked_confirm_title": "加入黑名单",
     "blocked_confirm_message": "确定拉黑该用户？此后双方将互相看不到对方的话题、无法互发消息，且无法查看对方资料，直到双方都解除。",
     "unblocked_confirm_title": "移出黑名单",
-    "unblocked_confirm_message": "确定将该用户移出黑名单？"
+    "unblocked_confirm_message": "确定将该用户移出黑名单？",
+    "camera_denied": "需要使用相机才能拍摄证书照片。",
+    "gallery_denied": "需要使用相册才能选择图片。"
   },
   "nav": {
     "feed": "话题大厅",
     "messages": "私信",
     "profile": "个人中心"
+  },
+  "verification": {
+    "verified": "已认证",
+    "pending": "审核中",
+    "unverified": "未认证",
+    "verify_btn": "认证",
+    "verify_title": "专业身份认证",
+    "verify_sub": "上传专业资格证书或执照以验证您的身份。",
+    "choose_file": "选择文件",
+    "file_picked": "已选择：{{name}}",
+    "note_label": "备注（可选）",
+    "note_placeholder": "如：医师执业证编号、所属机构……",
+    "submit": "提交",
+    "submit_ok_title": "已提交",
+    "submit_ok_message": "您的认证申请已提交，等待审核。",
+    "submit_fail_title": "提交失败",
+    "already_pending": "您已有申请正在审核中。",
+    "file_too_large": "文件过大（最大 5MB）",
+    "file_type_error": "不支持的文件类型",
+    "auth_required": "请先登录",
+    "take_photo": "拍照",
+    "choose_gallery": "从相册选择"
   },
   "premium": {
     "title": "高级会员",

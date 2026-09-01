@@ -18,7 +18,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types/database';
 import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
+import { truncateByWidth, exceedsWidthLimit, MESSAGE_MAX_UNITS } from '../lib/textLimit';
 import { RealtimeStatus } from '../components/ConnectionStatusBanner';
+import { VerifiedBadge } from '../components/VerifiedBadge';
 import { theme } from '../theme';
 import { isBlockedWith, blockUser } from '../lib/blocklist';
 
@@ -45,6 +47,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
   //   2) 对方 last_seen 心跳（真实用户 app 前台，每 60s 一次）
   //   3) 本会话中对方最近一条消息时间（进入聊天室时的兜底判定）
   const [partnerOnline, setPartnerOnline] = useState(true);
+  const [partnerVerification, setPartnerVerification] = useState<string | undefined>(undefined);
   const lastPartnerMessageAtRef = useRef<number>(0);
   const ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
@@ -52,7 +55,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
     const [profileRes, lastMsgRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('last_seen')
+        .select('last_seen, verification_status')
         .eq('id', recipientId)
         .maybeSingle(),
       supabase
@@ -75,6 +78,9 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
       (!!lastMsgRes.data?.created_at &&
         now - new Date(lastMsgRes.data.created_at).getTime() < ONLINE_WINDOW_MS);
     setPartnerOnline(online);
+    if (profileRes.data?.verification_status) {
+      setPartnerVerification(profileRes.data.verification_status);
+    }
   }, [recipientId, conversationId]);
 
   // 进入时查询 + 每 30s 刷新
@@ -252,9 +258,12 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
         <View style={styles.headerInfo}>
           <View style={styles.headerNameRow}>
             <TouchableOpacity onPress={onPressRecipient} activeOpacity={0.7} style={styles.headerNameLink}>
-              <Text style={styles.recipientName} numberOfLines={1}>
-                {recipientName}
-              </Text>
+              <View style={styles.headerNameInner}>
+                <Text style={styles.recipientName} numberOfLines={1}>
+                  {recipientName}
+                </Text>
+                <VerifiedBadge status={partnerVerification} size="small" />
+              </View>
             </TouchableOpacity>
             {!blocked && (
               <TouchableOpacity
@@ -403,6 +412,11 @@ const styles = StyleSheet.create({
   },
   headerNameLink: {
     flexShrink: 1,
+  },
+  headerNameInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   blockIconBtn: {
     padding: 2,

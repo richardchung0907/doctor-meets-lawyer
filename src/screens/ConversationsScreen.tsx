@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Conversation, Profile, ProfessionKey } from '../types/database';
 import { ProfessionBadge } from '../components/ProfessionBadge';
+import { VerifiedBadge } from '../components/VerifiedBadge';
 import { GenderAvatar } from '../components/GenderAvatar';
 import { theme } from '../theme';
 import { blockUser, unblockUser } from '../lib/blocklist';
@@ -52,8 +53,8 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
         .from('conversations')
         .select(`
           *,
-          participant1:participant1_id (id, username, profession, gender, avatar_url),
-          participant2:participant2_id (id, username, profession, gender, avatar_url)
+          participant1:participant1_id (id, username, profession, gender, avatar_url, verification_status),
+          participant2:participant2_id (id, username, profession, gender, avatar_url, verification_status)
         `)
         .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
         .order('updated_at', { ascending: false });
@@ -224,6 +225,7 @@ export const ConversationsScreen: React.FC<ConversationsScreenProps> = ({ onOpen
 
                   <View style={styles.profRow}>
                     <ProfessionBadge profession={partnerProf} size="small" />
+                    <VerifiedBadge status={partner?.verification_status} size="small" />
                   </View>
 
                   <Text style={styles.lastMsgText} numberOfLines={1}>
@@ -342,6 +344,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   profRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginVertical: 2,
   },
   lastMsgText: {
